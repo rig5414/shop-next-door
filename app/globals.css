@@ -3,14 +3,16 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #ffffff; /* Light mode background */
+  --foreground: #171717; /* Light mode text */
+  --primary: #007bff; /* Blue */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #121212; /* Dark mode background */
+    --foreground: #ffffff; /* White text in dark mode */
+    --primary: #3399ff; /* Lighter blue for dark mode */
   }
 }
 
