@@ -1,13 +1,18 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 
-const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  role: "customer" | "vendor"; // Role prop
+}
+
+const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <div className="flex">
-      {/* Sidebar */}
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      {/* Sidebar with role-based navigation */}
+      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} role={role} />
 
       {/* Main Content */}
       <main

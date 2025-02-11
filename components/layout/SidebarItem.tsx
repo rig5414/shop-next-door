@@ -7,6 +7,7 @@ interface SidebarItemProps {
   href: string;
   isCollapsed: boolean;
   pathname: string;
+  exactMatch?: boolean;
 }
 
 const SidebarItem: React.FC<SidebarItemProps> = ({ icon: Icon, text, href, isCollapsed, pathname }) => {

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "../../../components/layout/DashboardLayout";
 import Image from "next/image";
+import { use } from "react";
 
 
 interface Product {
@@ -20,7 +21,8 @@ interface Shop {
   products: Product[];
 }
 
-const ShopPage = ({ params }: { params: { id: string } }) => {
+const ShopPage = ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = use(params);
   const [shop, setShop] = useState<Shop | null>(null);
   const router = useRouter();
 
@@ -29,7 +31,7 @@ const ShopPage = ({ params }: { params: { id: string } }) => {
     const fetchShop = async () => {
       // Simulated shop data
       const shopData: Shop = {
-        id: parseInt(params.id),
+        id: parseInt(id),
         name: "SuperMart",
         description: "Your one-stop shop for daily needs!",
         products: [
@@ -41,8 +43,8 @@ const ShopPage = ({ params }: { params: { id: string } }) => {
       setShop(shopData);
     };
 
-    if (params.id) fetchShop();
-  }, [params.id]);
+    if (id) fetchShop();
+  }, [id]);
 
   if (!shop) return <p className="text-center text-white">Loading shop details...</p>;
 

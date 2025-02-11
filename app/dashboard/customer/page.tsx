@@ -39,7 +39,7 @@ const CustomerDashboard = () => {
   }, []);
 
   return (
-    <DashboardLayout>
+    <DashboardLayout role="customer">
       {/* Dashboard Header */}
       <DashboardHeader title={`Welcome, ${customerName}!`} subtitle="Here’s what’s happening today." />
 
