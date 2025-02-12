@@ -49,7 +49,7 @@ const ShopPage = ({ params }: { params: Promise<{ id: string }> }) => {
   if (!shop) return <p className="text-center text-white">Loading shop details...</p>;
 
   return (
-    <DashboardLayout>
+    <DashboardLayout role="customer">
       <div className="p-6">
         <h1 className="text-2xl font-bold text-white">{shop.name}</h1>
         <p className="text-gray-300">{shop.description}</p>

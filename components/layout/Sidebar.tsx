@@ -102,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) 
             <SidebarItem
               icon={FaChartBar}
               text="Insights"
-              href="/dashboard/admin/revenue"
+              href="/dashboard/admin/insights"
               isCollapsed={isCollapsed}
               pathname={pathname}
             />

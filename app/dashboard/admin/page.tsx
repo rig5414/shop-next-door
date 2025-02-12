@@ -18,55 +18,90 @@ interface User {
   status: "Active" | "Suspended";
 }
 
-// Sample users data
+interface Vendor {
+  id: string;
+  name: string;
+  shop: string;
+  status: "Approved" | "Pending" | "Suspended";
+}
+
+// Sample users
 const sampleUsers: User[] = [
   { id: "1", name: "John Doe", email: "john@example.com", role: "customer", status: "Active" },
   { id: "2", name: "Alice Smith", email: "alice@example.com", role: "vendor", status: "Active" },
   { id: "3", name: "Bob Johnson", email: "bob@example.com", role: "customer", status: "Suspended" },
 ];
 
+// Sample vendors
+const sampleVendors: Vendor[] = [
+  { id: "1", name: "Sarah Lee", shop: "Sarah's Boutique", status: "Approved" },
+  { id: "2", name: "Tom Carter", shop: "Tom's Electronics", status: "Pending" },
+  { id: "3", name: "Emily Green", shop: "Emily's Fashion", status: "Suspended" },
+];
+
+const handleLoginAsUser = (id: string) => {
+  alert(`Logging in as user ${id}`); 
+  // Implement actual login logic later
+};
+
 const AdminDashboard = () => {
   const [users, setUsers] = useState<User[] | null>(null);
+  const [vendors, setVendors] = useState<Vendor[] | null>(null);
   const [totalUsers, setTotalUsers] = useState(1200);
   const [totalVendors, setTotalVendors] = useState(300);
   const [totalOrders, setTotalOrders] = useState(4500);
   const [platformRevenue, setPlatformRevenue] = useState("$120,450");
-  const [adminName, setAdminName] = useState("Admin"); // Default name
+  const [adminName, setAdminName] = useState("Admin");
 
   useEffect(() => {
     // Simulated API response for admin (Replace this with Auth0 later)
     const fetchAdmin = async () => {
-      const admin = { name: "Manasseh Telle" }; // Replace with actual API call
+      const admin = { name: "Manasseh Telle" };
       setAdminName(admin.name);
     };
     fetchAdmin();
 
     // Load users
     setUsers(sampleUsers);
+
+    // Load vendors
+    setVendors(sampleVendors);
   }, []);
 
-  // Function to toggle user status
+  // Toggle user status function
   const toggleUserStatus = (id: string) => {
     if (!users) return;
     setUsers((prevUsers) =>
       prevUsers!.map((user) =>
-        user.id === id ? { ...user, status: user.status === "Active" ? "Suspended" : "Active" } : user
+        user.id === id
+          ? {
+              ...user,
+              status: user.status === "Active" ? "Suspended" : "Active",
+            }
+          : user
+      )
+    );
+  };  
+
+  // Toggle vendor status function
+  const toggleVendorStatus = (id: string) => {
+    if (!vendors) return;
+    setVendors((prevVendors) =>
+      prevVendors!.map((vendor) =>
+        vendor.id === id
+          ? {
+              ...vendor,
+              status:
+                vendor.status === "Approved"
+                  ? "Suspended"
+                  : vendor.status === "Suspended"
+                  ? "Pending"
+                  : "Approved",
+            }
+          : vendor
       )
     );
   };
-
-  // Function to handle logging in as a user
-  const handleLoginAsUser = (id: string) => {
-    alert(`Logged in as user with ID: ${id}`);
-  };
-
-  // Sample shops data
-  const shops = [
-    { id: 1, name: "Elite Fashion", owner: "Alice Johnson", status: "Active", products: 120 },
-    { id: 2, name: "Tech Haven", owner: "Mike Smith", status: "Pending", products: 85 },
-    { id: 3, name: "Green Mart", owner: "Sophia Lee", status: "Active", products: 200 },
-    { id: 4, name: "Urban Trends", owner: "David Brown", status: "Suspended", products: 50 },
-  ];
 
   return (
     <DashboardLayout role="admin">
@@ -98,9 +133,8 @@ const AdminDashboard = () => {
             View All Users →
           </Link>
         </div>
-
         {users ? (
-          <UsersTable users={users} toggleUserStatus={toggleUserStatus} handleLoginAsUser={handleLoginAsUser} />
+          <UsersTable users={users} toggleUserStatus={toggleUserStatus}  handleLoginAsUser={handleLoginAsUser}/>
         ) : (
           <div className="text-red-500 p-4">Error: Users data is missing</div>
         )}
@@ -114,31 +148,11 @@ const AdminDashboard = () => {
             View All Vendors →
           </Link>
         </div>
-        <VendorsTable />
-      </section>
-
-      {/* Shops Management Section */}
-      <section className="mt-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-white">Shops Management</h2>
-          <Link href="/dashboard/admin/shops" className="text-blue-400 hover:text-blue-300 transition">
-            See More →
-          </Link>
-        </div>
-
-        {/* Shop Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-4">
-          {shops.map((shop) => (
-            <div key={shop.id} className="bg-gray-800 p-4 rounded-lg shadow-md border border-gray-700">
-              <h3 className="text-lg font-semibold text-white">{shop.name}</h3>
-              <p className="text-sm text-gray-400">Owner: {shop.owner}</p>
-              <p className={`text-sm font-medium ${shop.status === "Active" ? "text-green-400" : shop.status === "Pending" ? "text-yellow-400" : "text-red-400"}`}>
-                Status: {shop.status}
-              </p>
-              <p className="text-sm text-gray-300">Total Products: {shop.products}</p>
-            </div>
-          ))}
-        </div>
+        {vendors ? (
+          <VendorsTable vendors={vendors} toggleVendorStatus={toggleVendorStatus} />
+        ) : (
+          <div className="text-red-500 p-4">No vendors available.</div>
+        )}
       </section>
     </DashboardLayout>
   );

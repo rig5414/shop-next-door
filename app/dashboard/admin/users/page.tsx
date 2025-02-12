@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import UsersTable from "../../../../components/tables/UserTable";
+import DashboardLayout from "../../../../components/layout/DashboardLayout";
 
 interface User {
   id: string;
@@ -18,20 +19,12 @@ const sampleUsers: User[] = [
   { id: "3", name: "Bob Johnson", email: "bob@example.com", role: "customer", status: "Suspended" },
 ];
 
-console.log("📌 Sample Users (Before State Initialization):", sampleUsers);
-
 const UsersPage = () => {
   const [users, setUsers] = useState<User[] | null>(null);
 
-  // Set initial users after component mounts to prevent hydration issues
   useEffect(() => {
-    console.log("✅ Initializing users state...");
     setUsers(sampleUsers);
   }, []);
-
-  useEffect(() => {
-    console.log("📌 Users state after update:", users);
-  }, [users]);
 
   const toggleUserStatus = (id: string) => {
     if (!users) return;
@@ -47,16 +40,16 @@ const UsersPage = () => {
   };
 
   return (
-    <div className="p-6 text-white">
-      <h2 className="text-2xl font-bold mb-4">User Management</h2>
-
-      {/* Conditional rendering to ensure users is defined before rendering UsersTable */}
-      {users && users.length > 0 ? (
-        <UsersTable users={users} toggleUserStatus={toggleUserStatus} handleLoginAsUser={handleLoginAsUser} />
-      ) : (
-        <div className="text-red-500 p-4">Error: Users data is missing</div>
-      )}
-    </div>
+    <DashboardLayout role="admin"> {/* Ensure DashboardLayout is wrapping everything */}
+      <div className="p-6 text-white">
+        <h2 className="text-2xl font-bold mb-4">User Management</h2>
+        {users && users.length > 0 ? (
+          <UsersTable users={users} toggleUserStatus={toggleUserStatus} handleLoginAsUser={handleLoginAsUser} />
+        ) : (
+          <div className="text-red-500 p-4">Error: Users data is missing</div>
+        )}
+      </div>
+    </DashboardLayout>
   );
 };
 
