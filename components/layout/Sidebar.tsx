@@ -66,22 +66,68 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) 
           exactMatch
         />
         {role === "customer" && (
+          <>
           <SidebarItem
             icon={FaStore}
             text="Shops"
-            href="/dashboard/shops"
+            href="/dashboard/customer/shops"
             isCollapsed={isCollapsed}
             pathname={pathname}
           />
+          <SidebarItem 
+            icon={FiShoppingBag} 
+            text="Orders" 
+            href="/dashboard/customer/orders" 
+            isCollapsed={isCollapsed} 
+            pathname={pathname} 
+          />
+          <SidebarItem 
+            icon={FiUser} 
+            text="Profile" 
+            href="/dashboard/customer/profile" 
+            isCollapsed={isCollapsed} 
+            pathname={pathname} 
+          />
+          <SidebarItem 
+            icon={FiSettings} 
+            text="Settings" 
+            href="/dashboard/customer/settings" 
+            isCollapsed={isCollapsed} 
+            pathname={pathname} 
+            />
+          </>
         )}
         {role === "vendor" && (
-          <SidebarItem
-            icon={FaStore}
-            text="Shop"
-            href="/dashboard/vendor/shop"
-            isCollapsed={isCollapsed}
-            pathname={pathname}
-          />
+          <>
+            <SidebarItem
+              icon={FaStore}
+              text="Shop"
+              href="/dashboard/vendor/shop"
+              isCollapsed={isCollapsed}
+              pathname={pathname}
+            />
+            <SidebarItem 
+              icon={FiShoppingBag} 
+              text="Orders" 
+              href="/dashboard/vendor/orders" 
+              isCollapsed={isCollapsed} 
+              pathname={pathname} 
+            />
+            <SidebarItem 
+              icon={FiUser} 
+              text="Profile" 
+              href="/dashboard/vendor/profile" 
+              isCollapsed={isCollapsed} 
+              pathname={pathname} 
+            />
+            <SidebarItem 
+              icon={FiSettings} 
+              text="Settings" 
+              href="/dashboard/vendor/settings" 
+              isCollapsed={isCollapsed} 
+              pathname={pathname} 
+            />
+          </>
         )}
         {role === "admin" && (
           <>
@@ -106,29 +152,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) 
               isCollapsed={isCollapsed}
               pathname={pathname}
             />
+            <SidebarItem 
+              icon={FiShoppingBag} 
+              text="Orders" 
+              href="/dashboard/admin/orders" 
+              isCollapsed={isCollapsed} 
+              pathname={pathname} 
+            />
+            <SidebarItem 
+              icon={FiUser} 
+              text="Profile" 
+              href="/dashboard/admin/profile" 
+              isCollapsed={isCollapsed} 
+              pathname={pathname} 
+            />
+            <SidebarItem 
+              icon={FiSettings} 
+              text="Settings" 
+              href="/dashboard/admmin/settings" 
+              isCollapsed={isCollapsed} 
+              pathname={pathname} 
+            />
           </>
         )}
-        <SidebarItem 
-          icon={FiShoppingBag} 
-          text="Orders" 
-          href="/dashboard/orders" 
-          isCollapsed={isCollapsed} 
-          pathname={pathname} 
-        />
-        <SidebarItem 
-          icon={FiUser} 
-          text="Profile" 
-          href="/dashboard/profile" 
-          isCollapsed={isCollapsed} 
-          pathname={pathname} 
-        />
-        <SidebarItem 
-          icon={FiSettings} 
-          text="Settings" 
-          href="/dashboard/settings" 
-          isCollapsed={isCollapsed} 
-          pathname={pathname} 
-        />
       </nav>
     </motion.aside>
   );
