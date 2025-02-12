@@ -3,7 +3,7 @@ import Sidebar from "./Sidebar";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  role: "customer" | "vendor"; // Role prop
+  role: "customer" | "vendor" | "admin"; // Role prop
 }
 
 const DashboardLayout = ({ children, role }: DashboardLayoutProps) => {

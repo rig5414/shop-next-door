@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { FiHome, FiShoppingBag, FiUser, FiSettings, FiMenu } from "react-icons/fi";
-import { FaStore } from "react-icons/fa";
+import { FaStore, FaUsers, FaChartBar, FaCogs } from "react-icons/fa";
 import { motion } from "framer-motion";
 import SidebarItem from "./SidebarItem";
 
 interface SidebarProps {
   isCollapsed: boolean;
   setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
-  role: "customer" | "vendor";
+  role: "customer" | "vendor" | "admin";
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) => {
@@ -60,12 +60,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) 
         <SidebarItem
           icon={FiHome}
           text="Home"
-          href={role === "vendor" ? "/dashboard/vendor" : "/dashboard/customer"}
+          href={role === "admin" ? "/dashboard/admin" : role === "vendor" ? "/dashboard/vendor" : "/dashboard/customer"}
           isCollapsed={isCollapsed}
           pathname={pathname}
           exactMatch
         />
-        {role === "customer" ? (
+        {role === "customer" && (
           <SidebarItem
             icon={FaStore}
             text="Shops"
@@ -73,7 +73,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) 
             isCollapsed={isCollapsed}
             pathname={pathname}
           />
-        ) : (
+        )}
+        {role === "vendor" && (
           <SidebarItem
             icon={FaStore}
             text="Shop"
@@ -82,9 +83,52 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) 
             pathname={pathname}
           />
         )}
-        <SidebarItem icon={FiShoppingBag} text="Orders" href="/dashboard/orders" isCollapsed={isCollapsed} pathname={pathname} />
-        <SidebarItem icon={FiUser} text="Profile" href="/dashboard/profile" isCollapsed={isCollapsed} pathname={pathname} />
-        <SidebarItem icon={FiSettings} text="Settings" href="/dashboard/settings" isCollapsed={isCollapsed} pathname={pathname} />
+        {role === "admin" && (
+          <>
+            <SidebarItem
+              icon={FaUsers}
+              text="Users"
+              href="/dashboard/admin/users"
+              isCollapsed={isCollapsed}
+              pathname={pathname}
+            />
+            <SidebarItem
+              icon={FaStore}
+              text="Vendors"
+              href="/dashboard/admin/vendors"
+              isCollapsed={isCollapsed}
+              pathname={pathname}
+            />
+            <SidebarItem
+              icon={FaChartBar}
+              text="Insights"
+              href="/dashboard/admin/revenue"
+              isCollapsed={isCollapsed}
+              pathname={pathname}
+            />
+          </>
+        )}
+        <SidebarItem 
+          icon={FiShoppingBag} 
+          text="Orders" 
+          href="/dashboard/orders" 
+          isCollapsed={isCollapsed} 
+          pathname={pathname} 
+        />
+        <SidebarItem 
+          icon={FiUser} 
+          text="Profile" 
+          href="/dashboard/profile" 
+          isCollapsed={isCollapsed} 
+          pathname={pathname} 
+        />
+        <SidebarItem 
+          icon={FiSettings} 
+          text="Settings" 
+          href="/dashboard/settings" 
+          isCollapsed={isCollapsed} 
+          pathname={pathname} 
+        />
       </nav>
     </motion.aside>
   );

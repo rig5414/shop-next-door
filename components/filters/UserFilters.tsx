@@ -18,11 +18,6 @@ interface UsersTableProps {
 }
 
 const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handleLoginAsUser }) => {
-  if (!users) {
-    console.error("UsersTable received undefined users");
-    return <div className="text-red-500 p-4">Error: Users data is missing</div>;
-  }
-
   return (
     <div className="bg-gray-800 p-4 rounded-lg shadow-lg text-white">
       <table className="w-full">
@@ -45,12 +40,12 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handle
                 {user.status}
               </td>
               <td className="p-2 flex space-x-3">
-                {/* Edit User */}
-                <Link href={`/dashboard/admin/users/${user.id}`} className="text-blue-400 hover:text-blue-300">
-                  <FiEdit size={18} title="Edit Credentials" />
+                <Link href={`/dashboard/admin/users/${user.id}`} passHref>
+                  <button className="text-blue-400 hover:text-blue-300" title="Edit Credentials" aria-label="Edit Credentials">
+                    <FiEdit size={18} />
+                  </button>
                 </Link>
 
-                {/* Toggle Status */}
                 <button
                   onClick={() => toggleUserStatus(user.id)}
                   className="text-yellow-400 hover:text-yellow-300"
@@ -60,7 +55,6 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handle
                   {user.status === "Active" ? <FiUserX size={18} /> : <FiLock size={18} />}
                 </button>
 
-                {/* Impersonate User */}
                 <button
                   onClick={() => handleLoginAsUser(user.id)}
                   className="text-green-400 hover:text-green-300"
