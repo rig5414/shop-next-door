@@ -84,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) 
           <SidebarItem 
             icon={FiUser} 
             text="Profile" 
-            href="/dashboard/customer/profile" 
+            href="/dashboard/profile" 
             isCollapsed={isCollapsed} 
             pathname={pathname} 
           />
@@ -116,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) 
             <SidebarItem 
               icon={FiUser} 
               text="Profile" 
-              href="/dashboard/vendor/profile" 
+              href="/dashboard/profile" 
               isCollapsed={isCollapsed} 
               pathname={pathname} 
             />
@@ -162,14 +162,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) 
             <SidebarItem 
               icon={FiUser} 
               text="Profile" 
-              href="/dashboard/admin/profile" 
+              href="/dashboard/profile" 
               isCollapsed={isCollapsed} 
               pathname={pathname} 
             />
             <SidebarItem 
               icon={FiSettings} 
               text="Settings" 
-              href="/dashboard/admmin/settings" 
+              href="/dashboard/admin/settings" 
               isCollapsed={isCollapsed} 
               pathname={pathname} 
             />

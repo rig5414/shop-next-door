@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "../../../components/layout/DashboardLayout";
 import DashboardHeader from "../../../components/dashboard/DashboardHeader";
 import DashboardStats from "../../../components/dashboard/DashboardStats";
+import ProfileHeader from "../../../components/profile/ProfileHeader";
 import UsersTable from "../../../components/tables/UserTable";
 import VendorsTable from "../../../components/tables/VendorTable";
 import OrdersChart from "../../../components/dashboard/charts/OrdersChart";
@@ -45,8 +46,8 @@ const handleLoginAsUser = (id: string) => {
 };
 
 const AdminDashboard = () => {
-  const [users, setUsers] = useState<User[] | null>(null);
-  const [vendors, setVendors] = useState<Vendor[] | null>(null);
+  const [users, setUsers] = useState<User[]>(sampleUsers);
+  const [vendors, setVendors] = useState<Vendor[]>(sampleVendors);
   const [totalUsers, setTotalUsers] = useState(1200);
   const [totalVendors, setTotalVendors] = useState(300);
   const [totalOrders, setTotalOrders] = useState(4500);
