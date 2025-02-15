@@ -45,7 +45,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ onProfileUpdate }) => {
         <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
       </div>
       <h2 className="text-xl font-semibold text-white">{`${firstName} ${lastName}`}</h2>
-      <p className="text-sm text-gray-300">Vendor</p>
+      <p className="text-sm text-gray-300">Admin</p>
     </div>
   );
 };

@@ -57,7 +57,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     // Simulated API response for admin (Replace this with Auth0 later)
     const fetchAdmin = async () => {
-      const admin = { name: "Manasseh Telle" };
+      const admin = { name: "John Doe" };
       setAdminName(admin.name);
     };
     fetchAdmin();
@@ -104,6 +104,17 @@ const AdminDashboard = () => {
     );
   };
 
+  // Toggle update user role
+  const updateUserRole = (userId: string, newRole: string) => {
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
+        user.id === userId ? { ...user, role: newRole } : user
+      )
+    );
+
+    console.log(`(Mock) User ${userId} role updated to ${newRole}`)
+  };
+
   return (
     <DashboardLayout role="admin">
       {/* Dashboard Header */}
@@ -135,7 +146,7 @@ const AdminDashboard = () => {
           </Link>
         </div>
         {users ? (
-          <UsersTable users={users} toggleUserStatus={toggleUserStatus}  handleLoginAsUser={handleLoginAsUser}/>
+          <UsersTable users={users} toggleUserStatus={toggleUserStatus}  handleLoginAsUser={handleLoginAsUser} updateUserRole={updateUserRole} />
         ) : (
           <div className="text-red-500 p-4">Error: Users data is missing</div>
         )}
