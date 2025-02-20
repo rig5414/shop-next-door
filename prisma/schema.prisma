@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shops     Shop[]
+  orders    Order[]
+  transactions Transaction[]
+}
+
+model Shop {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  status      ShopStatus
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  vendorId    String
+  vendor      User     @relation(fields: [vendorId], references: [id])
+  products    Product[]
+  orders      Order[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  price       Decimal
+  stock       Int
+  image       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id])
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  customerId String
+  total     Decimal
+  status    OrderStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  customer  User     @relation(fields: [customerId], references: [id])
+  shopId    String
+  shop      Shop     @relation(fields: [shopId], references: [id])
+  items     OrderItem[]
+  transaction Transaction?
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Decimal
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  orderId   String   @unique
+  customerId String
+  amount    Decimal
+  status    TransactionStatus
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  order     Order    @relation(fields: [orderId], references: [id])
+  customer  User     @relation(fields: [customerId], references: [id])
+}
+
+enum Role {
+  customer
+  vendor
+  admin
+}
+
+enum ShopStatus {
+  active
+  inactive
+}
+
+enum OrderStatus {
+  pending
+  shipped
+  completed
+  cancelled
+}
+
+enum TransactionStatus {
+  pending
+  successful
+  failed
+}

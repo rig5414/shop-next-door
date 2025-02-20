@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "../../../components/layout/DashboardLayout";
 import Image from "next/image";
-import { use } from "react";
-
 
 interface Product {
   id: number;
@@ -22,7 +20,9 @@ interface Shop {
 }
 
 const ShopPage = ({ params }: { params: Promise<{ id: string }> }) => {
-  const { id } = use(params);
+  const resolvedParams = use(params); // ✅ Unwrapping the params Promise
+  const shopId = parseInt(resolvedParams.id); // ✅ Now safely accessing the ID
+
   const [shop, setShop] = useState<Shop | null>(null);
   const router = useRouter();
 
@@ -31,7 +31,7 @@ const ShopPage = ({ params }: { params: Promise<{ id: string }> }) => {
     const fetchShop = async () => {
       // Simulated shop data
       const shopData: Shop = {
-        id: parseInt(id),
+        id: shopId,
         name: "SuperMart",
         description: "Your one-stop shop for daily needs!",
         products: [
@@ -43,8 +43,8 @@ const ShopPage = ({ params }: { params: Promise<{ id: string }> }) => {
       setShop(shopData);
     };
 
-    if (id) fetchShop();
-  }, [id]);
+    if (shopId) fetchShop();
+  }, [shopId]);
 
   if (!shop) return <p className="text-center text-white">Loading shop details...</p>;
 

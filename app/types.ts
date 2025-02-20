@@ -16,5 +16,7 @@ export type OrderItem = {
     total: number;
     paymentStatus: PaymentStatus;
     orderStatus: OrderStatus;
+    items: OrderItem[];
+    isRefunded?: boolean;
   };
   

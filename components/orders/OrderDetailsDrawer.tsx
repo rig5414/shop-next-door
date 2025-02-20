@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import Image from "next/image";
+import { Order, OrderStatus } from "../../app/types";
 
 interface OrderDetailsDrawerProps {
-  order: any | null;
+  order: Order | null;
   onClose: () => void;
-  onUpdateStatus: (orderId: string, newStatus: string) => void;
+  onUpdateStatus: (orderId: string, newStatus: OrderStatus) => void;
   onRefund: (orderId: string) => void;
   onDelete: (orderId: string) => void;
 }
@@ -22,7 +23,7 @@ const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
   if (!order) return null;
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newStatus = e.target.value;
+    const newStatus = e.target.value as OrderStatus;
     setSelectedStatus(newStatus);
     onUpdateStatus(order.id, newStatus);
   };
