@@ -8,11 +8,15 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "prisma": {
+    "seed": "node prisma/seed.cjs"
+  },
   "dependencies": {
     "@auth0/nextjs-auth0": "^3.6.0",
     "@headlessui/react": "^2.2.0",
     "@prisma/client": "^6.4.1",
     "axios": "^1.7.9",
+    "bcryptjs": "^3.0.2",
     "chart.js": "^4.4.7",
     "cookies-next": "^5.1.0",
     "file-saver": "^2.0.5",
@@ -31,10 +35,12 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/file-saver": "^2.0.7",
-    "@types/node": "22.13.1",
+    "@types/node": "^22.13.5",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
   }
 }

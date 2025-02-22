@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,79 +8,79 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  shops     Shop[]
-  orders    Order[]
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  password     String
+  role         Role
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  orders       Order[]
+  shops        Shop[]
   transactions Transaction[]
 }
 
 model Shop {
-  id          String   @id @default(uuid())
+  id          String     @id @default(uuid())
   name        String
   description String
   status      ShopStatus
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   vendorId    String
-  vendor      User     @relation(fields: [vendorId], references: [id])
-  products    Product[]
   orders      Order[]
+  products    Product[]
+  vendor      User       @relation(fields: [vendorId], references: [id])
 }
 
 model Product {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   name        String
   description String
   price       Decimal
   stock       Int
   image       String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   shopId      String
-  shop        Shop     @relation(fields: [shopId], references: [id])
   orderItems  OrderItem[]
+  shop        Shop        @relation(fields: [shopId], references: [id])
 }
 
 model Order {
-  id        String   @id @default(uuid())
-  customerId String
-  total     Decimal
-  status    OrderStatus
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  customer  User     @relation(fields: [customerId], references: [id])
-  shopId    String
-  shop      Shop     @relation(fields: [shopId], references: [id])
-  items     OrderItem[]
+  id          String       @id @default(uuid())
+  customerId  String
+  total       Decimal
+  status      OrderStatus
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  shopId      String
+  customer    User         @relation(fields: [customerId], references: [id])
+  shop        Shop         @relation(fields: [shopId], references: [id])
+  items       OrderItem[]
   transaction Transaction?
 }
 
 model OrderItem {
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   orderId   String
   productId String
   quantity  Int
   price     Decimal
-  order     Order    @relation(fields: [orderId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
 }
 
 model Transaction {
-  id        String   @id @default(uuid())
-  orderId   String   @unique
+  id         String            @id @default(uuid())
+  orderId    String            @unique
   customerId String
-  amount    Decimal
-  status    TransactionStatus
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  order     Order    @relation(fields: [orderId], references: [id])
-  customer  User     @relation(fields: [customerId], references: [id])
+  amount     Decimal
+  status     TransactionStatus
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  customer   User              @relation(fields: [customerId], references: [id])
+  order      Order             @relation(fields: [orderId], references: [id])
 }
 
 enum Role {
