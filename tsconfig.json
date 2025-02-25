@@ -29,7 +29,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-, "app/api/auth/callback.js", "prisma/seed.cjs"  ],
+, "app/api/auth/callback.js", "prisma/seed.mjs"  ],
   "exclude": [
     "node_modules"
   ]

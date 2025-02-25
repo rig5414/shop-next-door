@@ -24,6 +24,7 @@ model Shop {
   id          String     @id @default(uuid())
   name        String
   description String
+  type        ShopType
   status      ShopStatus
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -33,18 +34,32 @@ model Shop {
   vendor      User       @relation(fields: [vendorId], references: [id])
 }
 
+model ProductCatalog {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  defaultPrice Decimal
+  image       String?
+  category    String   // E.g., "Grocery" or "Local Shop"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products    Product[]
+}
+
 model Product {
-  id          String      @id @default(uuid())
-  name        String
-  description String
+  id          String   @id @default(uuid())
+  shopId      String
+  catalogId   String
   price       Decimal
   stock       Int
-  image       String
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  shopId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  shop        Shop           @relation(fields: [shopId], references: [id])
+  catalog     ProductCatalog @relation(fields: [catalogId], references: [id])
+
   orderItems  OrderItem[]
-  shop        Shop        @relation(fields: [shopId], references: [id])
 }
 
 model Order {
@@ -105,4 +120,9 @@ enum TransactionStatus {
   pending
   successful
   failed
+}
+
+enum ShopType {
+  local_shop
+  grocery_shop
 }
