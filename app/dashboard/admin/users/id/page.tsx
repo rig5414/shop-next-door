@@ -13,10 +13,11 @@ interface User {
 }
 
 const UserDetails = () => {
-  const { id } = useParams() as { id: string }; // Ensure ID is treated as a string
+  const { id } = useParams() as { id: string };
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -37,6 +38,8 @@ const UserDetails = () => {
 
   const handleSave = async () => {
     if (!user) return;
+
+    setSaving(true);
     try {
       const response = await fetch(`/api/users/${id}`, {
         method: "PUT",
@@ -45,9 +48,12 @@ const UserDetails = () => {
       });
 
       if (!response.ok) throw new Error("Failed to update user");
+
       alert("User updated successfully!");
     } catch (err) {
       alert("Error updating user.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -59,6 +65,7 @@ const UserDetails = () => {
       <div className="p-6">
         <h2 className="text-xl font-bold text-white">Edit User Details</h2>
         {user && <UserForm user={user} setUser={setUser} onSave={handleSave} />}
+        {saving && <div className="text-gray-400 mt-2">Saving...</div>}
       </div>
     </DashboardLayout>
   );

@@ -2,36 +2,73 @@
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "../../../../components/layout/DashboardLayout";
-import { FiSearch, FiShoppingBag, FiFilter } from "react-icons/fi";
+import { FiSearch, FiShoppingBag } from "react-icons/fi";
 import Link from "next/link";
 
-// Mock shop data
-const shopCategories = ["All", "Groceries", "Electronics", "Fashion"];
-const shopsData = [
-  { id: 1, name: "FreshMart", category: "Groceries", isOpen: true, description: "Fresh groceries & organic products." },
-  { id: 2, name: "TechHub", category: "Electronics", isOpen: true, description: "Latest gadgets & accessories." },
-  { id: 3, name: "Fashion Avenue", category: "Fashion", isOpen: false, description: "Trendy clothes & accessories." },
-];
+type Shop = {
+  id: string;
+  name: string;
+  description: string;
+  shopType: "local_shop" | "grocery_shop"; // Corrected to lowercase
+  status: "active" | "inactive";
+};
+
+const shopTypes = ["All", "Local Shops", "Grocery Shops"];
 
 const ShopsPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [filteredShops, setFilteredShops] = useState(shopsData);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedType, setSelectedType] = useState<string>("All");
+  const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
 
   useEffect(() => {
-    let filtered = shopsData.filter(
-      (shop) =>
-        (selectedCategory === "All" || shop.category === selectedCategory) &&
+    const fetchShops = async () => {
+      try {
+        const response = await fetch("/api/shops");
+        if (!response.ok) throw new Error("Failed to fetch shops");
+        const data: Shop[] = await response.json();
+        console.log("Fetched Shops:", data);
+        setShops(data);
+      } catch (error) {
+        console.error("Error fetching shops:", error);
+      }
+    };
+
+    fetchShops();
+  }, []);
+
+  useEffect(() => {
+    console.log("Selected Type:", selectedType);
+
+    let shopTypeFilter: string | null = null;
+    if (selectedType === "Local Shops") {
+      shopTypeFilter = "local_shop"; // Corrected to lowercase
+    } else if (selectedType === "Grocery Shops") {
+      shopTypeFilter = "grocery_shop"; // Corrected to lowercase
+    }
+
+    console.log("Shop Type Filter:", shopTypeFilter);
+
+    const filtered = shops.filter((shop) => {
+      console.log(`Checking shop: ${shop.name} | Type: ${shop.shopType}`);
+
+      return (
+        (shopTypeFilter === null || shop.shopType === shopTypeFilter) &&
         shop.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+      );
+    });
+
+    console.log("Filtered Shops:", filtered);
+
     setFilteredShops(filtered);
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedType, shops]);
 
   return (
     <DashboardLayout role="customer">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-white">Browse Shops</h1>
+
         {/* Search Bar */}
         <div className="relative w-full md:w-1/3 mt-4 md:mt-0">
           <input
@@ -47,15 +84,15 @@ const ShopsPage = () => {
 
       {/* Filters */}
       <div className="flex gap-4 mb-6">
-        {shopCategories.map((category) => (
+        {shopTypes.map((type) => (
           <button
-            key={category}
+            key={type}
             className={`px-4 py-2 rounded-md ${
-              selectedCategory === category ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-300"
+              selectedType === type ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-300"
             }`}
-            onClick={() => setSelectedCategory(category)}
+            onClick={() => setSelectedType(type)}
           >
-            {category}
+            {type}
           </button>
         ))}
       </div>
@@ -75,10 +112,10 @@ const ShopsPage = () => {
                 <p className="text-sm text-gray-400">{shop.description}</p>
                 <span
                   className={`text-xs font-semibold ${
-                    shop.isOpen ? "text-green-400" : "text-red-400"
+                    shop.status === "active" ? "text-green-400" : "text-red-400"
                   }`}
                 >
-                  {shop.isOpen ? "Open" : "Closed"}
+                  {shop.status === "active" ? "Open" : "Closed"}
                 </span>
               </div>
             </div>

@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import DashboardLayout from "../../../../components/layout/DashboardLayout";
 import VendorsTable from "../../../../components/tables/VendorTable";
 
@@ -11,30 +12,86 @@ interface Vendor {
 }
 
 const AdminVendorsPage = () => {
-  const [vendors, setVendors] = useState<Vendor[]>([
-    { id: "1", name: "Sarah Lee", shop: "Sarah's Boutique", status: "Approved" as const },
-    { id: "2", name: "Tom Carter", shop: "Tom's Electronics", status: "Pending" as const },
-    { id: "3", name: "Emily Green", shop: "Emily's Fashion", status: "Suspended" as const },
-  ]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleVendorStatus = (id: string) => {
-    setVendors((prev) =>
-      prev.map((vendor) =>
-        vendor.id === id
-          ? {
-              ...vendor,
-              status: vendor.status === "Approved" ? "Suspended" : "Approved",
-            }
-          : vendor
-      )
-    );
+  useEffect(() => {
+    const fetchVendors = async () => {
+      try {
+        const [usersRes, shopsRes] = await Promise.all([
+          fetch("/api/users"),
+          fetch("/api/shops"),
+        ]);
+
+        if (!usersRes.ok || !shopsRes.ok) {
+          throw new Error("Failed to fetch data");
+        }
+
+        const [usersData, shopsData] = await Promise.all([
+          usersRes.json(),
+          shopsRes.json(),
+        ]);
+
+        const vendorUsers = usersData.filter((user: any) => user.role === "vendor");
+
+        const formattedVendors = vendorUsers.map((vendor: any) => ({
+          id: vendor.id,
+          name: vendor.name,
+          shop: shopsData.find((s: any) => s.vendorId === vendor.id)?.name || "No Shop",
+          status: vendor.status as "Approved" | "Pending" | "Suspended",
+        }));
+
+        setVendors(formattedVendors);
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVendors();
+  }, []);
+
+  const toggleVendorStatus = async (id: string) => {
+    try {
+      setVendors((prev) =>
+        prev.map((v) => (v.id === id ? { ...v, status: "Updating..." as any } : v))
+      );
+
+      const vendor = vendors.find((v) => v.id === id);
+      if (!vendor) throw new Error("Vendor not found");
+
+      const newStatus = vendor.status === "Approved" ? "Suspended" : "Approved";
+
+      const response = await fetch(`/api/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update status");
+
+      setVendors((prev) =>
+        prev.map((v) => (v.id === id ? { ...v, status: newStatus } : v))
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Error updating vendor status");
+    }
   };
 
   return (
     <DashboardLayout role="admin">
       <div className="p-6">
         <h1 className="text-2xl font-bold text-white">Vendor Management</h1>
-        <VendorsTable vendors={vendors} toggleVendorStatus={toggleVendorStatus} />
+        {loading ? (
+          <p className="text-gray-400">Loading vendors...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : (
+          <VendorsTable vendors={vendors} toggleVendorStatus={toggleVendorStatus} />
+        )}
       </div>
     </DashboardLayout>
   );

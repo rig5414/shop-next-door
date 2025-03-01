@@ -1,33 +1,39 @@
 "use client";
 
-import { Doughnut } from "react-chartjs-2";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { useRouter } from "next/navigation";
+import { fetchInsights } from "../../../lib/fetchInsights";
 
-// Register Chart.js components
-ChartJS.register(ArcElement, Tooltip, Legend);
+const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"];
 
-const RevenueChart = ({ className= "" }) => {
+const RevenueChart = ({ className = "" }) => {
   const router = useRouter();
+  const [chartData, setChartData] = useState<any[]>([]);
 
-  const [chartData] = useState({
-    labels: ["Electronics", "Clothing", "Groceries", "Accessories", "Others"],
-    datasets: [
-      {
-        label: "Revenue ($)",
-        data: [5000, 4200, 3500, 2800, 1500],
-        backgroundColor: [
-          "#FF6384",
-          "#36A2EB",
-          "#FFCE56",
-          "#4BC0C0",
-          "#9966FF",
-        ],
-        hoverOffset: 10,
-      },
-    ],
-  });
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const insights = await fetchInsights();
+        if (insights?.revenueBreakdown) {
+          const formattedData = Object.entries(insights.revenueBreakdown).map(([category, value], index) => ({
+            name: category,
+            value,
+            color: COLORS[index % COLORS.length], // Assign colors dynamically
+          }));
+          setChartData(formattedData);
+        }
+      } catch (error) {
+        console.error("Error fetching revenue data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (chartData.length === 0) {
+    return <div className="text-white">Loading revenue data...</div>;
+  }
 
   return (
     <div
@@ -35,7 +41,17 @@ const RevenueChart = ({ className= "" }) => {
       onClick={() => router.push("/analytics/revenue")}
     >
       <h2 className="text-white text-xl font-semibold mb-3">Revenue Breakdown</h2>
-      <Doughnut data={chartData} />
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80}>
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
       <p className="text-blue-400 text-sm mt-2 text-center">Click to view full report</p>
     </div>
   );

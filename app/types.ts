@@ -11,8 +11,8 @@ export type OrderItem = {
   
   export type Order = {
     id: string;
-    customer: string;
-    shop: string;
+    customer: { id: string; name: string; email: string };
+    shop: { id: string; name: string };
     total: number;
     paymentStatus: PaymentStatus;
     orderStatus: OrderStatus;

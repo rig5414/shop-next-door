@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import DashboardLayout from "../../../components/layout/DashboardLayout";
 import DashboardHeader from "../../../components/dashboard/DashboardHeader";
 import DashboardStats from "../../../components/dashboard/DashboardStats";
-import ProfileHeader from "../../../components/profile/ProfileHeader";
 import UsersTable from "../../../components/tables/UserTable";
 import VendorsTable from "../../../components/tables/VendorTable";
 import OrdersChart from "../../../components/dashboard/charts/OrdersChart";
@@ -26,106 +25,84 @@ interface Vendor {
   status: "Approved" | "Pending" | "Suspended";
 }
 
-// Sample users
-const sampleUsers: User[] = [
-  { id: "1", name: "John Doe", email: "john@example.com", role: "customer", status: "Active" },
-  { id: "2", name: "Alice Smith", email: "alice@example.com", role: "vendor", status: "Active" },
-  { id: "3", name: "Bob Johnson", email: "bob@example.com", role: "customer", status: "Suspended" },
-];
-
-// Sample vendors
-const sampleVendors: Vendor[] = [
-  { id: "1", name: "Sarah Lee", shop: "Sarah's Boutique", status: "Approved" },
-  { id: "2", name: "Tom Carter", shop: "Tom's Electronics", status: "Pending" },
-  { id: "3", name: "Emily Green", shop: "Emily's Fashion", status: "Suspended" },
-];
-
-const handleLoginAsUser = (id: string) => {
-  alert(`Logging in as user ${id}`); 
-  // Implement actual login logic later
-};
-
 const AdminDashboard = () => {
-  const [users, setUsers] = useState<User[]>(sampleUsers);
-  const [vendors, setVendors] = useState<Vendor[]>(sampleVendors);
-  const [totalUsers, setTotalUsers] = useState(1200);
-  const [totalVendors, setTotalVendors] = useState(300);
-  const [totalOrders, setTotalOrders] = useState(4500);
-  const [platformRevenue, setPlatformRevenue] = useState("$120,450");
-  const [adminName, setAdminName] = useState("Admin");
+  const [users, setUsers] = useState<User[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalVendors, setTotalVendors] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [platformRevenue, setPlatformRevenue] = useState("Ksh 0.00");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // Simulated API response for admin (Replace this with Auth0 later)
-    const fetchAdmin = async () => {
-      const admin = { name: "John Doe" };
-      setAdminName(admin.name);
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch Users
+        const usersRes = await fetch("/api/users");
+        const usersData = await usersRes.json();
+        setUsers(usersData);
+        setTotalUsers(usersData.length);
+
+        // Fetch Vendors (Shops)
+        const vendorsRes = await fetch("/api/shops");
+        const vendorsData = await vendorsRes.json();
+        setVendors(vendorsData);
+        setTotalVendors(vendorsData.length);
+
+        // Fetch Orders
+        const ordersRes = await fetch("/api/orders");
+        const ordersData = await ordersRes.json();
+        setTotalOrders(ordersData.length);
+
+        // Fetch Revenue (Sum of successful transactions)
+        const transactionsRes = await fetch("/api/transactions");
+        const transactionsData = await transactionsRes.json();
+        const totalRevenue = transactionsData
+          .filter((t: any) => t.status === "successful")
+          .reduce((acc: number, curr: any) => acc + parseFloat(curr.amount), 0);
+        setPlatformRevenue(`Ksh ${totalRevenue.toLocaleString()}`);
+
+        setLoading(false);
+      } catch (err) {
+        setError("Failed to load dashboard data.");
+        setLoading(false);
+      }
     };
-    fetchAdmin();
 
-    // Load users
-    setUsers(sampleUsers);
-
-    // Load vendors
-    setVendors(sampleVendors);
+    fetchDashboardData();
   }, []);
 
-  // Toggle user status function
-  const toggleUserStatus = (id: string) => {
-    if (!users) return;
-    setUsers((prevUsers) =>
-      prevUsers!.map((user) =>
-        user.id === id
-          ? {
-              ...user,
-              status: user.status === "Active" ? "Suspended" : "Active",
-            }
-          : user
-      )
+  if (loading) {
+    return (
+      <DashboardLayout role="admin">
+        <DashboardHeader title="Admin Dashboard" subtitle="Loading data..." />
+        <p className="text-white text-center mt-6">Loading dashboard data...</p>
+      </DashboardLayout>
     );
-  };  
+  }
 
-  // Toggle vendor status function
-  const toggleVendorStatus = (id: string) => {
-    if (!vendors) return;
-    setVendors((prevVendors) =>
-      prevVendors!.map((vendor) =>
-        vendor.id === id
-          ? {
-              ...vendor,
-              status:
-                vendor.status === "Approved"
-                  ? "Suspended"
-                  : vendor.status === "Suspended"
-                  ? "Pending"
-                  : "Approved",
-            }
-          : vendor
-      )
+  if (error) {
+    return (
+      <DashboardLayout role="admin">
+        <DashboardHeader title="Admin Dashboard" subtitle="Error loading data" />
+        <p className="text-red-500 text-center mt-6">{error}</p>
+      </DashboardLayout>
     );
-  };
-
-  // Toggle update user role
-  const updateUserRole = (userId: string, newRole: string) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId ? { ...user, role: newRole } : user
-      )
-    );
-
-    console.log(`(Mock) User ${userId} role updated to ${newRole}`)
-  };
+  }
 
   return (
     <DashboardLayout role="admin">
-      {/* Dashboard Header */}
-      <DashboardHeader title={`Welcome, ${adminName}!`} subtitle="Manage users, vendors, orders, and shops." />
+      <DashboardHeader title="Welcome, Admin!" subtitle="Manage users, vendors, orders, and shops." />
 
       {/* Sales & Revenue Insights */}
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Sales & Revenue Insights</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-          <OrdersChart className="w-full h-full" />
-          <RevenueChart className="w-full h-full" />
+          <OrdersChart />
+          <RevenueChart />
         </div>
       </section>
 
@@ -145,11 +122,7 @@ const AdminDashboard = () => {
             View All Users →
           </Link>
         </div>
-        {users ? (
-          <UsersTable users={users} toggleUserStatus={toggleUserStatus}  handleLoginAsUser={handleLoginAsUser} updateUserRole={updateUserRole} />
-        ) : (
-          <div className="text-red-500 p-4">Error: Users data is missing</div>
-        )}
+        <UsersTable users={users}/>
       </section>
 
       {/* Vendor Management Section */}
@@ -160,11 +133,7 @@ const AdminDashboard = () => {
             View All Vendors →
           </Link>
         </div>
-        {vendors ? (
-          <VendorsTable vendors={vendors} toggleVendorStatus={toggleVendorStatus} />
-        ) : (
-          <div className="text-red-500 p-4">No vendors available.</div>
-        )}
+        <VendorsTable vendors={vendors}/>
       </section>
     </DashboardLayout>
   );

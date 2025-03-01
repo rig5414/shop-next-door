@@ -22,12 +22,20 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onOpenModal }) => {
         <tbody>
           {orders.map((order) => (
             <tr key={order.id} className="border-b border-gray-700">
-              <td className="p-2">{order.customer}</td>
-              <td className="p-2">{order.shop}</td>
+              {/* ✅ Fix: Access `customer.name` instead of rendering the whole object */}
+              <td className="p-2">{order.customer?.name || "Unknown"}</td>
+
+              {/* ✅ Fix: Access `shop.name` instead of rendering the whole object */}
+              <td className="p-2">{order.shop?.name || "Unknown"}</td>
+
+              {/* ✅ Use `order.orderStatus` since your schema has it */}
               <td className={`p-2 ${order.orderStatus === "Pending" ? "text-yellow-400" : "text-green-400"}`}>
                 {order.orderStatus}
               </td>
-              <td className="p-2 text-right">${order.total.toFixed(2)}</td>
+
+              {/* ✅ Ensure `total` is a number before calling `.toFixed(2)` */}
+              <td className="p-2 text-right">Ksh. {Number(order.total).toFixed(2)}</td>
+
               <td className="p-2 text-right">
                 <button
                   onClick={() => onOpenModal(order)}

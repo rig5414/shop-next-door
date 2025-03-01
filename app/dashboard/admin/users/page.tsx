@@ -12,41 +12,77 @@ interface User {
   status: "Active" | "Suspended";
 }
 
-// Sample users data
-const sampleUsers: User[] = [
-  { id: "1", name: "John Doe", email: "john@example.com", role: "customer", status: "Active" },
-  { id: "2", name: "Alice Smith", email: "alice@example.com", role: "vendor", status: "Active" },
-  { id: "3", name: "Bob Johnson", email: "bob@example.com", role: "customer", status: "Suspended" },
-];
-
 const UsersPage = () => {
   const [users, setUsers] = useState<User[] | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setUsers(sampleUsers);
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch("/api/users");
+        if (!response.ok) throw new Error("Failed to fetch users");
+        const data = await response.json();
+        setUsers(data);
+      } catch (err) {
+        setError("Error loading users.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
   }, []);
 
-  const toggleUserStatus = (id: string) => {
+  const toggleUserStatus = async (id: string) => {
     if (!users) return;
-    setUsers((prevUsers) =>
-      prevUsers!.map((user) =>
-        user.id === id ? { ...user, status: user.status === "Active" ? "Suspended" : "Active" } : user
-      )
-    );
+    const user = users.find((user) => user.id === id);
+    if (!user) return;
+
+    const updatedStatus = user.status === "Active" ? "Suspended" : "Active";
+
+    try {
+      const response = await fetch(`/api/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: updatedStatus }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update user status");
+
+      setUsers((prevUsers) =>
+        prevUsers!.map((u) => (u.id === id ? { ...u, status: updatedStatus } : u))
+      );
+    } catch (err) {
+      alert("Error updating user status.");
+    }
   };
 
-  const handleLoginAsUser = (id: string) => {
-    alert(`Logged in as user with ID: ${id}`);
+  const handleLoginAsUser = async (id: string) => {
+    try {
+      const response = await fetch(`/api/users/${id}/login-as`, { method: "POST" });
+
+      if (!response.ok) throw new Error("Failed to log in as user");
+
+      alert(`Logged in as user with ID: ${id}`);
+    } catch (err) {
+      alert("Error logging in as user.");
+    }
   };
 
   return (
-    <DashboardLayout role="admin"> {/* Ensure DashboardLayout is wrapping everything */}
+    <DashboardLayout role="admin">
       <div className="p-6 text-white">
         <h2 className="text-2xl font-bold mb-4">User Management</h2>
-        {users && users.length > 0 ? (
-          <UsersTable users={users} toggleUserStatus={toggleUserStatus} handleLoginAsUser={handleLoginAsUser} />
-        ) : (
-          <div className="text-red-500 p-4">Error: Users data is missing</div>
+
+        {loading && <div className="text-gray-400">Loading users...</div>}
+        {error && <div className="text-red-500 p-4">{error}</div>}
+        {users && users.length > 0 && (
+          <UsersTable
+            users={users}
+            toggleUserStatus={toggleUserStatus}
+            handleLoginAsUser={handleLoginAsUser}
+          />
         )}
       </div>
     </DashboardLayout>
