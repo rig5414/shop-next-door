@@ -1,13 +1,44 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import { OrderStatus } from "@prisma/client";
+import { Decimal } from "@prisma/client/runtime/library";
 
-// GET all orders or filter by customerId
+// Define Item type
+type Item = {
+  productId: string;
+  quantity: number;
+  price: string | number;
+};
+
+// Utility function to ensure price is always a Decimal
+const parsePrice = (price: string | number): Decimal => {
+  try {
+    return new Decimal(price);
+  } catch (error) {
+    console.error(`Invalid price detected: ${price}`);
+    throw new Error("Invalid price format");
+  }
+};
+
+// GET all orders with optional filters
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const customerId = searchParams.get("customerId");
+    const vendorId = searchParams.get("vendorId");
+    const shopId = searchParams.get("shopId");
 
-    const whereClause = customerId ? { customerId } : {};
+    let whereClause: any = {};
+
+    if (customerId) whereClause.customerId = customerId;
+    if (vendorId) {
+      const shops = await prisma.shop.findMany({
+        where: { vendorId },
+        select: { id: true },
+      });
+      whereClause.shopId = { in: shops.map((s) => s.id) };
+    }
+    if (shopId) whereClause.shopId = shopId;
 
     const orders = await prisma.order.findMany({
       where: whereClause,
@@ -19,113 +50,140 @@ export async function GET(req: Request) {
       },
     });
 
-    // Convert Decimal total to a number before returning response
-    const formattedOrders = orders.map(order => ({
-      ...order,
-      total: Number(order.total), // Ensure total is a number
-    }));
-
-    return NextResponse.json(formattedOrders);
+    return NextResponse.json(orders.length ? orders : { message: "No orders found", data: [] }, { status: 200 });
   } catch (error) {
+    console.error("Error fetching orders:", error);
     return NextResponse.json({ error: "Error fetching orders" }, { status: 500 });
   }
 }
 
-// POST create a new order (Only for customers)
+// POST create a new order
 export async function POST(req: Request) {
   try {
-    const { customerId, shopId, items } = await req.json();
+    const { customerId, shopId, items }: { customerId: string; shopId: string; items: Item[] } = await req.json();
 
-    if (!customerId || !shopId || !items || items.length === 0) {
+    if (!customerId || !shopId || !items?.length) {
       return NextResponse.json({ error: "Invalid order data" }, { status: 400 });
     }
 
-    // Check if shop exists
     const shop = await prisma.shop.findUnique({ where: { id: shopId } });
-    if (!shop) {
-      return NextResponse.json({ error: "Shop not found" }, { status: 404 });
-    }
+    if (!shop) return NextResponse.json({ error: "Shop not found" }, { status: 404 });
 
-    const total = items.reduce((sum: number, item: { price: number; quantity: number }) => 
-      sum + item.price * item.quantity, 0);
+    const productIds = items.map((item) => item.productId);
+    const products = await prisma.product.findMany({ where: { id: { in: productIds }, shopId } });
 
-    const order = await prisma.order.create({
-      data: {
-        customerId,
-        shopId,
-        total,
-        status: "pending",
-        items: {
-          create: items.map((item: { productId: string; quantity: number; price: number }) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-        },
-      },
-      include: { items: true },
+    const stockIssues = items.filter((item) => {
+      const product = products.find((p) => p.id === item.productId);
+      return !product || product.stock < item.quantity;
     });
 
-    return NextResponse.json(order, { status: 201 });
+    if (stockIssues.length) return NextResponse.json({ error: "Insufficient stock for some items" }, { status: 400 });
+
+    const total = items.reduce((sum, item) => sum.plus(parsePrice(item.price).times(item.quantity)), new Decimal(0));
+
+    const result = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.create({
+        data: {
+          customerId,
+          shopId,
+          total,
+          status: "pending",
+          items: { create: items.map((item) => ({ productId: item.productId, quantity: item.quantity, price: parsePrice(item.price) })) },
+        },
+        include: { items: true },
+      });
+
+      await Promise.all(
+        items.map((item) => tx.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.quantity } } }))
+      );
+
+      await tx.transaction.create({ data: { orderId: order.id, customerId: order.customerId, status: "pending", amount: total } });
+
+      return order;
+    });
+
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
+    console.error("Order creation failed:", error);
     return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
   }
 }
 
-// PUT update order status (Admins & Vendors)
+// PUT update order status
 export async function PUT(req: Request) {
   try {
-    const { id, status, vendorId } = await req.json();
-    
-    if (!id || !status) {
-      return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+    const { id, status, vendorId, items }: { id: string; status: string; vendorId?: string; items?: Item[] } = await req.json();
+
+    if (!id || !status) return NextResponse.json({ error: "Invalid data" }, { status: 400 });
+
+    if (!["pending", "shipped", "completed", "cancelled"].includes(status)) {
+      return NextResponse.json({ error: "Invalid order status" }, { status: 400 });
     }
 
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: { shop: true },
+    const order = await prisma.order.findUnique({ where: { id }, include: { shop: true, items: true } });
+
+    if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+    if (vendorId && order.shop?.vendorId !== vendorId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      if (items?.length) {
+        const removedItems = order.items.filter((existingItem) => !items.find((newItem) => newItem.productId === existingItem.productId));
+
+        await Promise.all(
+          removedItems.map((item) => tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } }))
+        );
+
+        await Promise.all(
+          items.map((item) => tx.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.quantity } } }))
+        );
+
+        await tx.orderItem.deleteMany({ where: { orderId: id } });
+        await tx.orderItem.createMany({
+          data: items.map((item) => ({ orderId: id, productId: item.productId, quantity: item.quantity, price: parsePrice(item.price) })),
+        });
+
+        const total = items.reduce((sum, item) => sum.plus(parsePrice(item.price).times(item.quantity)), new Decimal(0));
+
+        await tx.order.update({ where: { id }, data: { status: status as OrderStatus, total } });
+      } else {
+        await tx.order.update({ where: { id }, data: { status: status as OrderStatus } });
+      }
     });
 
-    if (!order) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
-    }
-
-    // Check if vendor is authorized
-    if (vendorId && (!order.shop || order.shop.vendorId !== vendorId)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: { status },
-      include: { items: true },
-    });
-
-    return NextResponse.json(updatedOrder);
+    return NextResponse.json({ message: "Order updated successfully" });
   } catch (error) {
+    console.error("Order update failed:", error);
     return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
   }
 }
 
-// DELETE order (Only for admins)
+// DELETE order (Only admins)
 export async function DELETE(req: Request) {
   try {
-    const { id } = await req.json();
-    if (!id) {
-      return NextResponse.json({ error: "Order ID required" }, { status: 400 });
-    }
+    const { id, role }: { id: string; role: string } = await req.json();
 
-    const order = await prisma.order.findUnique({ where: { id } });
-    if (!order) {
-      return NextResponse.json({ error: "Order not found" }, { status: 404 });
-    }
+    if (!id) return NextResponse.json({ error: "Order ID required" }, { status: 400 });
 
-    await prisma.orderItem.deleteMany({ where: { orderId: id } });
-    await prisma.transaction.deleteMany({ where: { orderId: id } });
-    await prisma.order.delete({ where: { id } });
+    if (role !== "admin") return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
-    return NextResponse.json({ message: "Order deleted successfully" });
+    const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+
+    if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+    await prisma.$transaction(async (tx) => {
+      await Promise.all(order.items.map((item) => tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } })));
+
+      await tx.orderItem.deleteMany({ where: { orderId: id } });
+      await tx.transaction.deleteMany({ where: { orderId: id } });
+      await tx.order.delete({ where: { id } });
+    });
+
+    return NextResponse.json({ message: "Order deleted successfully, stock restored" });
   } catch (error) {
+    console.error("Order deletion failed:", error);
     return NextResponse.json({ error: "Failed to delete order" }, { status: 500 });
   }
 }
