@@ -4,6 +4,10 @@ import { prisma } from "../../../../lib/prisma";
 // GET: Fetch a single product catalog by ID
 export async function GET(req: Request, { params }: { params: { id: string } }) {
     try {
+        if (!params.id) {
+            return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
+        }
+
         const productCatalog = await prisma.productCatalog.findUnique({
             where: { id: params.id },
         });
@@ -12,11 +16,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
             return NextResponse.json({ error: "Product catalog not found" }, { status: 404 });
         }
 
-        return NextResponse.json(productCatalog);
-    } catch (error) {
-        console.error("GET /api/product-catalogs/:id error:", error);
+        return NextResponse.json({
+            ...productCatalog,
+            image: productCatalog.image ? `/images/${productCatalog.image}` : "/placeholder-product.jpg"
+        });
+        
+    } catch (error: unknown) {
+        console.error("GET /api/product-catalog/:id error:", error);
         return NextResponse.json(
-            { error: "Failed to fetch product catalog", details: error },
+            { error: "Failed to fetch product catalog", details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }
@@ -25,15 +33,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 // PUT: Update a product catalog by ID
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
     try {
+        if (!params.id) {
+            return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
+        }
+
         const body = await req.json();
         const { name, description, defaultPrice, image, category } = body;
 
-        const existingProductCatalog = await prisma.productCatalog.findUnique({
-            where: { id: params.id },
-        });
-
-        if (!existingProductCatalog) {
-            return NextResponse.json({ error: "Product catalog not found" }, { status: 404 });
+        if (!name && !description && defaultPrice == null && !image && !category) {
+            return NextResponse.json({ error: "At least one field must be provided to update" }, { status: 400 });
         }
 
         const updatedProductCatalog = await prisma.productCatalog.update({
@@ -42,10 +50,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         });
 
         return NextResponse.json(updatedProductCatalog);
-    } catch (error) {
-        console.error("PUT /api/product-catalogs/:id error:", error);
+    } catch (error: unknown) {
+        console.error("PUT /api/product-catalog/:id error:", error);
         return NextResponse.json(
-            { error: "Failed to update product catalog", details: error },
+            { error: "Failed to update product catalog", details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }
@@ -54,21 +62,20 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 // DELETE: Delete a product catalog by ID
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
     try {
-        const existingProductCatalog = await prisma.productCatalog.findUnique({
+        if (!params.id) {
+            return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
+        }
+
+        await prisma.productCatalog.delete({
             where: { id: params.id },
         });
 
-        if (!existingProductCatalog) {
-            return NextResponse.json({ error: "Product catalog not found" }, { status: 404 });
-        }
-
-        await prisma.productCatalog.delete({ where: { id: params.id } });
-
         return NextResponse.json({ message: "Product catalog deleted successfully" });
-    } catch (error) {
-        console.error("DELETE /api/product-catalogs/:id error:", error);
+    } catch (error: unknown) {
+        console.error("DELETE /api/product-catalog/:id error:", error);
+
         return NextResponse.json(
-            { error: "Failed to delete product catalog", details: error },
+            { error: "Failed to delete product catalog", details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }

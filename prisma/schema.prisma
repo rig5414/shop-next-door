@@ -39,7 +39,7 @@ model ProductCatalog {
   name        String   @unique
   description String?
   defaultPrice Decimal
-  image       String?
+  image       String   // Store only the filename (e.g., "soda.jpg")
   category    String   // E.g., "Grocery" or "Local Shop"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

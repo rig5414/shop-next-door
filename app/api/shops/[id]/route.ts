@@ -4,6 +4,9 @@ import { prisma } from "../../../../lib/prisma";
 // GET: Fetch a single shop by ID
 export async function GET(req: Request, { params }: { params: { id: string } }) {
     try {
+        if (!params || !params.id) {
+            return NextResponse.json({ error: "Shop ID is required"}, { status: 400 });
+        }
         const shop = await prisma.shop.findUnique({
             where: { id: params.id },
             include: {

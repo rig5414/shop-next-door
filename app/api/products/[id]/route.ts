@@ -16,10 +16,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         }
 
         return NextResponse.json(product);
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("GET /api/products/:id error:", error);
         return NextResponse.json(
-            { error: "Failed to fetch product", details: error },
+            { error: "Failed to fetch product", details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }
@@ -31,6 +31,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         const body = await req.json();
         const { price, stock } = body; // Updated fields
 
+        if (price === undefined || stock === undefined) {
+            return NextResponse.json({ error: "Missing required fields (price, stock)" }, { status: 400 });
+        }
+
         const existingProduct = await prisma.product.findUnique({ where: { id: params.id } });
 
         if (!existingProduct) {
@@ -39,14 +43,14 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
         const updatedProduct = await prisma.product.update({
             where: { id: params.id },
-            data: { price, stock }, // Updated data
+            data: { price, stock },
         });
 
         return NextResponse.json(updatedProduct);
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("PUT /api/products/:id error:", error);
         return NextResponse.json(
-            { error: "Failed to update product", details: error },
+            { error: "Failed to update product", details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }
@@ -61,7 +65,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
             return NextResponse.json({ error: "Product not found" }, { status: 404 });
         }
 
-        // Delete related OrderItem records
+        // Delete related OrderItem records first to prevent foreign key constraints
         await prisma.orderItem.deleteMany({
             where: { productId: params.id },
         });
@@ -70,10 +74,10 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
         await prisma.product.delete({ where: { id: params.id } });
 
         return NextResponse.json({ message: "Product deleted successfully" });
-    } catch (error: any) {
-        console.error("DELETE /api/products/:id error:", error.stack);
+    } catch (error: unknown) {
+        console.error("DELETE /api/products/:id error:", error);
         return NextResponse.json(
-            { error: "Failed to delete product", details: error.message },
+            { error: "Failed to delete product", details: error instanceof Error ? error.message : String(error) },
             { status: 500 }
         );
     }

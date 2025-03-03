@@ -9,7 +9,7 @@ type Shop = {
   id: string;
   name: string;
   description: string;
-  shopType: "local_shop" | "grocery_shop"; // Corrected to lowercase
+  shopType: "local_shop" | "grocery_shop";
   status: "active" | "inactive";
 };
 
@@ -42,24 +42,25 @@ const ShopsPage = () => {
 
     let shopTypeFilter: string | null = null;
     if (selectedType === "Local Shops") {
-      shopTypeFilter = "local_shop"; // Corrected to lowercase
+      shopTypeFilter = "local_shop";
     } else if (selectedType === "Grocery Shops") {
-      shopTypeFilter = "grocery_shop"; // Corrected to lowercase
+      shopTypeFilter = "grocery_shop";
     }
 
     console.log("Shop Type Filter:", shopTypeFilter);
 
     const filtered = shops.filter((shop) => {
       console.log(`Checking shop: ${shop.name} | Type: ${shop.shopType}`);
-
-      return (
-        (shopTypeFilter === null || shop.shopType === shopTypeFilter) &&
-        shop.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      
+      const nameMatch = shop.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const typeMatch = shopTypeFilter === null || shop.shopType === shopTypeFilter;
+      
+      console.log(`Name Match: ${nameMatch}, Type Match: ${typeMatch}`);
+      
+      return nameMatch && typeMatch;
     });
 
     console.log("Filtered Shops:", filtered);
-
     setFilteredShops(filtered);
   }, [searchTerm, selectedType, shops]);
 
@@ -99,28 +100,34 @@ const ShopsPage = () => {
 
       {/* Shop Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredShops.map((shop) => (
-          <Link
-            key={shop.id}
-            href={`/shop/${shop.id}`}
-            className="block bg-gray-900 p-4 rounded-lg hover:bg-gray-700 transition"
-          >
-            <div className="flex items-center">
-              <FiShoppingBag className="text-blue-400 w-6 h-6 mr-3" />
-              <div>
-                <h2 className="text-lg font-medium text-white">{shop.name}</h2>
-                <p className="text-sm text-gray-400">{shop.description}</p>
-                <span
-                  className={`text-xs font-semibold ${
-                    shop.status === "active" ? "text-green-400" : "text-red-400"
-                  }`}
-                >
-                  {shop.status === "active" ? "Open" : "Closed"}
-                </span>
+        {filteredShops.length > 0 ? (
+          filteredShops.map((shop) => (
+            <Link
+              key={shop.id}
+              href={`/dashboard/customer/shops/${shop.id}`}
+              className="block bg-gray-900 p-4 rounded-lg hover:bg-gray-700 transition"
+            >
+              <div className="flex items-center">
+                <FiShoppingBag className="text-blue-400 w-6 h-6 mr-3" />
+                <div>
+                  <h2 className="text-lg font-medium text-white">{shop.name}</h2>
+                  <p className="text-sm text-gray-400">{shop.description}</p>
+                  <span
+                    className={`text-xs font-semibold ${
+                      shop.status === "active" ? "text-green-400" : "text-red-400"
+                    }`}
+                  >
+                    {shop.status === "active" ? "Open" : "Closed"}
+                  </span>
+                </div>
               </div>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          ))
+        ) : (
+          <div className="col-span-3 text-center py-8 text-gray-400">
+            No shops found matching your criteria.
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
