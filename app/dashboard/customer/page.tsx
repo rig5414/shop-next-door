@@ -7,6 +7,7 @@ import DashboardHeader from "../../../components/dashboard/DashboardHeader";
 import DashboardStats from "../../../components/dashboard/DashboardStats";
 import OrderList from "../../../components/orders/OrderList";
 import ProductList from "../../../components/shop/ProductList";
+import OrderDetailsModal from "../../../components/orders/OrderDetailsModal"; // Import the modal
 import Link from "next/link";
 import { FiShoppingBag } from "react-icons/fi";
 import { Order } from "../../types";
@@ -29,6 +30,8 @@ const CustomerDashboard = () => {
     totalSpent: 0,
   });
 
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null); // State for the modal
+
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
       setCustomerName(session.user.name || "User");
@@ -43,20 +46,19 @@ const CustomerDashboard = () => {
       const res = await fetch(`/api/orders?customerId=${customerId}`);
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data: Order[] = await res.json();
-  
+
       setOrders(data);
-  
+
       // Ensure `order.total` is always a number
       const totalOrders = data.length;
       const pendingOrders = data.filter((order) => order.orderStatus === "Pending").length;
       const totalSpent = data.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
-  
+
       setStats({ totalOrders, pendingOrders, totalSpent });
     } catch (error) {
       console.error("Error fetching orders:", error);
     }
   };
-  
 
   // Fetch open shops
   const fetchShops = async () => {
@@ -71,8 +73,14 @@ const CustomerDashboard = () => {
     }
   };
 
+  // Open the order modal
   const handleOpenModal = (order: Order) => {
-    console.log("Open order details:", order);
+    setSelectedOrder(order);
+  };
+
+  // Close the order modal
+  const handleCloseModal = () => {
+    setSelectedOrder(null);
   };
 
   return (
@@ -120,6 +128,9 @@ const CustomerDashboard = () => {
           )}
         </div>
       </section>
+
+      {/* Order Details Modal */}
+      {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={handleCloseModal} />}
     </DashboardLayout>
   );
 };

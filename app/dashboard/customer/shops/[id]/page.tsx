@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import DashboardLayout from "../../../../../components/layout/DashboardLayout";
 import { FiShoppingBag } from "react-icons/fi";
 import Image from "next/image";
+import CartUi from "../../../../../components/cart/CartUi"; // Import Cart UI
 
 type Product = {
     id: string;
@@ -31,6 +32,8 @@ const ShopPage = () => {
     const id = params?.id as string | undefined;
     const [shop, setShop] = useState<Shop | null>(null);
     const [products, setProducts] = useState<Product[]>([]);
+    const [cartOpen, setCartOpen] = useState(false);
+    const [cartItems, setCartItems] = useState<{ id: string; name: string; price: number; quantity: number }[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +67,24 @@ const ShopPage = () => {
 
         fetchShopDetails();
     }, [id]);
+
+    // Add to Cart Function
+    const addToCart = (productId: string) => {
+        const product = products.find((p) => p.id === productId);
+        if (!product) return;
+        
+        setCartItems((prev) => {
+            const existingItem = prev.find((item) => item.id === productId);
+            if (existingItem) {
+                return prev.map((item) =>
+                    item.id === productId ? { ...item, quantity: item.quantity + 1 } : item
+                );
+            }
+            return [...prev, { id: product.id, name: product.catalog.name, price: product.price, quantity: 1 }];
+        });
+
+        setCartOpen(true); // Open cart when adding item
+    };
 
     if (loading) {
         return (
@@ -147,7 +168,10 @@ const ShopPage = () => {
                                 </div>
                                 <h3 className="text-lg font-medium">{product.catalog.name}</h3>
                                 <p className="text-blue-400 font-bold mb-3">KSh {product.price.toLocaleString()}</p>
-                                <button className="w-full bg-blue-600 px-4 py-2 rounded-lg text-white hover:bg-blue-700 transition">
+                                <button
+                                    onClick={() => addToCart(product.id)}
+                                    className="w-full bg-blue-600 px-4 py-2 rounded-lg text-white hover:bg-blue-700 transition"
+                                >
                                     Add to Cart
                                 </button>
                             </div>
@@ -155,6 +179,9 @@ const ShopPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Shopping Cart UI */}
+            <CartUi cartItems={cartItems} setCartItems={setCartItems} cartOpen={cartOpen} setCartOpen={setCartOpen} />
         </DashboardLayout>
     );
 };

@@ -6,6 +6,14 @@ interface OrderListProps {
   onOpenModal: (order: Order) => void;
 }
 
+// Status color mapping
+const statusColors: Record<string, string> = {
+  pending: "text-yellow-400",
+  shipped: "text-blue-400",
+  completed: "text-green-400",
+  cancelled: "text-red-400",
+};
+
 const OrderList: React.FC<OrderListProps> = ({ orders, onOpenModal }) => {
   return (
     <div className="bg-gray-900 p-4 rounded-lg shadow-lg">
@@ -20,32 +28,28 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onOpenModal }) => {
           </tr>
         </thead>
         <tbody>
-          {orders.map((order) => (
-            <tr key={order.id} className="border-b border-gray-700">
-              {/* ✅ Fix: Access `customer.name` instead of rendering the whole object */}
-              <td className="p-2">{order.customer?.name || "Unknown"}</td>
-
-              {/* ✅ Fix: Access `shop.name` instead of rendering the whole object */}
-              <td className="p-2">{order.shop?.name || "Unknown"}</td>
-
-              {/* ✅ Use `order.orderStatus` since your schema has it */}
-              <td className={`p-2 ${order.orderStatus === "Pending" ? "text-yellow-400" : "text-green-400"}`}>
-                {order.orderStatus}
-              </td>
-
-              {/* ✅ Ensure `total` is a number before calling `.toFixed(2)` */}
-              <td className="p-2 text-right">Ksh. {Number(order.total).toFixed(2)}</td>
-
-              <td className="p-2 text-right">
-                <button
-                  onClick={() => onOpenModal(order)}
-                  className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-white"
-                >
-                  View
-                </button>
-              </td>
-            </tr>
-          ))}
+          {Array.isArray(orders) &&
+            orders.map((order) => {
+              const statusText = order.status.charAt(0).toUpperCase() + order.status.slice(1); // Capitalize
+              return (
+                <tr key={order.id} className="border-b border-gray-700">
+                  <td className="p-2">{order.customer?.name || "Unknown"}</td>
+                  <td className="p-2">{order.shop?.name || "Unknown"}</td>
+                  <td className={`p-2 ${statusColors[order.status] || "text-gray-400"}`}>
+                    {statusText}
+                  </td>
+                  <td className="p-2 text-right">Ksh. {Number(order.total).toFixed(2)}</td>
+                  <td className="p-2 text-right">
+                    <button
+                      onClick={() => onOpenModal(order)}
+                      className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-white"
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
         </tbody>
       </table>
     </div>

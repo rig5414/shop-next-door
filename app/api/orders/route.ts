@@ -42,13 +42,21 @@ export async function GET(req: Request) {
 
     const orders = await prisma.order.findMany({
       where: whereClause,
-      include: {
-        items: true,
+      select: {
+        id: true,
+        customerId: true,
+        shopId: true,
+        total: true,
+        status: true,  
+        createdAt: true,
+        updatedAt: true,
         customer: { select: { id: true, name: true, email: true } },
         shop: { select: { id: true, name: true } },
+        items: true,
         transaction: true,
       },
     });
+    
 
     return NextResponse.json(orders.length ? orders : { message: "No orders found", data: [] }, { status: 200 });
   } catch (error) {

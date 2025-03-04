@@ -1,41 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "../../../../components/layout/DashboardLayout";
 import OrderList from "../../../../components/orders/OrderList";
 import OrderDetailsModal from "../../../../components/orders/OrderDetailsModal";
-import { OrderStatus,PaymentStatus } from "../../../types";
-
-const mockOrders = [
-  {
-    id: "1",
-    customer: "John Doe",
-    shop: "TechHub",
-    orderStatus: "Pending" as OrderStatus,
-    paymentStatus: "Paid" as PaymentStatus,
-    total: 120.99,
-    items: [
-      { id: "101", name: "Wireless Mouse", price: 35.99, quantity: 1 },
-      { id: "102", name: "Mechanical Keyboard", price: 85.00, quantity: 1 },
-    ],
-  },
-  {
-    id: "2",
-    customer: "John Doe",
-    shop: "Fashion Avenue",
-    orderStatus: "Completed" as OrderStatus,
-    paymentStatus: "Pending" as PaymentStatus,
-    total: 49.99,
-    items: [
-      { id: "201", name: "Denim Jacket", price: 49.99, quantity: 1 },
-    ],
-  },
-];
+import { useSession } from "next-auth/react";
+import Link from "next/link";
+import { Order } from "../../../types";
 
 const OrdersPage = () => {
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const { data: session } = useSession();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const handleOpenModal = (order: any) => {
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch(`/api/orders?customerId=${session.user.id}`);
+        const data: Order[] = await response.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid order data format");
+        }
+
+        setOrders(data);
+      } catch (err) {
+        setError("Something went wrong. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [session?.user?.id]);
+
+  const handleOpenModal = (order: Order) => {
     setSelectedOrder(order);
   };
 
@@ -49,15 +52,33 @@ const OrdersPage = () => {
         <h1 className="text-2xl font-bold text-white">Your Orders</h1>
         <p className="text-gray-300">Track your past and current orders.</p>
 
-        {/* Order List */}
-        <div className="mt-6">
-          <OrderList orders={mockOrders} onOpenModal={handleOpenModal} />
-        </div>
+        {/* Loading state */}
+        {loading && <p className="text-gray-300 mt-4">Loading your orders...</p>}
+
+        {/* Error message */}
+        {error && <p className="text-red-500 mt-4">{error}</p>}
+
+        {/* If orders exist, show the list */}
+        {!loading && !error && orders.length > 0 ? (
+          <div className="mt-6">
+            <OrderList orders={orders} onOpenModal={handleOpenModal} />
+          </div>
+        ) : (
+          // If no orders, show message and link to shops
+          !loading &&
+          !error && (
+            <div className="mt-6 text-center">
+              <p className="text-gray-400">Currently, you haven&#39;t bought anything.</p>
+              <p className="text-gray-400">Would you like to buy something?</p>
+              <Link href="/dashboard/customer/shops" className="text-blue-500 underline mt-2 inline-block">
+                Click here to explore shops
+              </Link>
+            </div>
+          )
+        )}
 
         {/* Order Details Modal */}
-        {selectedOrder && (
-          <OrderDetailsModal order={selectedOrder} onClose={handleCloseModal} />
-        )}
+        {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={handleCloseModal} />}
       </div>
     </DashboardLayout>
   );
