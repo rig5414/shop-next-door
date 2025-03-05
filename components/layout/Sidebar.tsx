@@ -1,182 +1,106 @@
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { FiHome, FiShoppingBag, FiUser, FiSettings, FiMenu } from "react-icons/fi";
-import { FaStore, FaUsers, FaChartBar, FaCogs } from "react-icons/fa";
+import { Dispatch, SetStateAction, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { FiHome, FiShoppingBag, FiUser, FiSettings, FiMenu, FiLogOut } from "react-icons/fi";
+import { FaStore, FaUsers, FaChartBar } from "react-icons/fa";
+import { IconType } from "react-icons";
 import { motion } from "framer-motion";
 import SidebarItem from "./SidebarItem";
+import LogoutModal from "../auth/LogOutModal"; // Import the modal
 
 interface SidebarProps {
   isCollapsed: boolean;
-  setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsCollapsed: Dispatch<SetStateAction<boolean>>;
   role: "customer" | "vendor" | "admin";
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [userToggled, setUserToggled] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!userToggled) {
-        setIsScrolled(window.scrollY > 100);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [userToggled]);
-
-  const handleToggle = () => {
-    setUserToggled(true);
-    setIsCollapsed((prev) => !prev);
+  const handleLogout = () => {
+    signOut({ callbackUrl: "/" }); // Redirect to landing page
   };
 
-  useEffect(() => {
-    if (!isScrolled) {
-      setUserToggled(false);
-    }
-  }, [isScrolled]);
+  const navItems: Record<
+    "customer" | "vendor" | "admin",
+    { icon: IconType; text: string; href: string }[]
+  > = {
+    customer: [
+      { icon: FaStore, text: "Shops", href: "/dashboard/customer/shops" },
+      { icon: FiShoppingBag, text: "Orders", href: "/dashboard/customer/orders" },
+      { icon: FiUser, text: "Profile", href: "/dashboard/profile" },
+      { icon: FiSettings, text: "Settings", href: "/dashboard/customer/settings" },
+    ],
+    vendor: [
+      { icon: FaStore, text: "Shop", href: "/dashboard/vendor/shop" },
+      { icon: FiShoppingBag, text: "Orders", href: "/dashboard/vendor/orders" },
+      { icon: FiUser, text: "Profile", href: "/dashboard/profile" },
+      { icon: FiSettings, text: "Settings", href: "/dashboard/vendor/settings" },
+    ],
+    admin: [
+      { icon: FaUsers, text: "Users", href: "/dashboard/admin/users" },
+      { icon: FaStore, text: "Vendors", href: "/dashboard/admin/vendors" },
+      { icon: FaChartBar, text: "Insights", href: "/dashboard/admin/insights" },
+      { icon: FiShoppingBag, text: "Orders", href: "/dashboard/admin/orders" },
+      { icon: FiUser, text: "Profile", href: "/dashboard/profile" },
+      { icon: FiSettings, text: "Settings", href: "/dashboard/admin/settings" },
+    ],
+  };
 
   return (
-    <motion.aside
-      animate={{ width: isCollapsed ? "65px" : "220px", opacity: isCollapsed ? 0.9 : 1 }}
-      className="fixed top-0 left-0 h-screen bg-gray-900 text-white shadow-lg transition-all"
-    >
-      {/* Sidebar Header */}
-      <div className={`p-3 flex ${isCollapsed ? "justify-center" : "justify-between"} items-center`}>
-        {!isCollapsed && <h2 className="text-lg font-bold">Dashboard</h2>}
-        <button
-          onClick={handleToggle}
-          className={`text-white ${isCollapsed ? "flex justify-center w-full" : ""}`}
-          aria-label="Toggle Sidebar"
-        >
-          <FiMenu size={24} />
-        </button>
-      </div>
+    <>
+      <motion.aside
+        animate={{ width: isCollapsed ? "55px" : "220px", opacity: isCollapsed ? 0.9 : 1 }}
+        className="fixed top-0 left-0 h-screen bg-gray-900 text-white shadow-lg transition-all flex flex-col"
+      >
+        {/* Sidebar Header */}
+        <div className={`p-3 flex ${isCollapsed ? "justify-center" : "justify-between"} items-center`}>
+          {!isCollapsed && <h2 className="text-lg font-bold">Dashboard</h2>}
+          <button onClick={() => setIsCollapsed((prev: boolean) => !prev)} className="text-white" aria-label="Toggle Sidebar">
+            <FiMenu size={24} />
+          </button>
+        </div>
 
-      {/* Sidebar Navigation */}
-      <nav className={`mt-4 ${isCollapsed ? "flex flex-col items-center space-y-6" : ""}`}>
-        <SidebarItem
-          icon={FiHome}
-          text="Home"
-          href={role === "admin" ? "/dashboard/admin" : role === "vendor" ? "/dashboard/vendor" : "/dashboard/customer"}
-          isCollapsed={isCollapsed}
-          pathname={pathname}
-          exactMatch
-        />
-        {role === "customer" && (
-          <>
+        {/* Sidebar Navigation */}
+        <nav className="mt-4 flex-grow">
           <SidebarItem
-            icon={FaStore}
-            text="Shops"
-            href="/dashboard/customer/shops"
+            icon={FiHome}
+            text="Home"
+            href={
+              role === "admin" ? "/dashboard/admin" :
+              role === "vendor" ? "/dashboard/vendor" :
+              "/dashboard/customer"
+            }
             isCollapsed={isCollapsed}
             pathname={pathname}
+            exactMatch
           />
-          <SidebarItem 
-            icon={FiShoppingBag} 
-            text="Orders" 
-            href="/dashboard/customer/orders" 
-            isCollapsed={isCollapsed} 
-            pathname={pathname} 
-          />
-          <SidebarItem 
-            icon={FiUser} 
-            text="Profile" 
-            href="/dashboard/profile" 
-            isCollapsed={isCollapsed} 
-            pathname={pathname} 
-          />
-          <SidebarItem 
-            icon={FiSettings} 
-            text="Settings" 
-            href="/dashboard/customer/settings" 
-            isCollapsed={isCollapsed} 
-            pathname={pathname} 
-            />
-          </>
-        )}
-        {role === "vendor" && (
-          <>
-            <SidebarItem
-              icon={FaStore}
-              text="Shop"
-              href="/dashboard/vendor/shop"
-              isCollapsed={isCollapsed}
-              pathname={pathname}
-            />
-            <SidebarItem 
-              icon={FiShoppingBag} 
-              text="Orders" 
-              href="/dashboard/vendor/orders" 
-              isCollapsed={isCollapsed} 
-              pathname={pathname} 
-            />
-            <SidebarItem 
-              icon={FiUser} 
-              text="Profile" 
-              href="/dashboard/profile" 
-              isCollapsed={isCollapsed} 
-              pathname={pathname} 
-            />
-            <SidebarItem 
-              icon={FiSettings} 
-              text="Settings" 
-              href="/dashboard/vendor/settings" 
-              isCollapsed={isCollapsed} 
-              pathname={pathname} 
-            />
-          </>
-        )}
-        {role === "admin" && (
-          <>
-            <SidebarItem
-              icon={FaUsers}
-              text="Users"
-              href="/dashboard/admin/users"
-              isCollapsed={isCollapsed}
-              pathname={pathname}
-            />
-            <SidebarItem
-              icon={FaStore}
-              text="Vendors"
-              href="/dashboard/admin/vendors"
-              isCollapsed={isCollapsed}
-              pathname={pathname}
-            />
-            <SidebarItem
-              icon={FaChartBar}
-              text="Insights"
-              href="/dashboard/admin/insights"
-              isCollapsed={isCollapsed}
-              pathname={pathname}
-            />
-            <SidebarItem 
-              icon={FiShoppingBag} 
-              text="Orders" 
-              href="/dashboard/admin/orders" 
-              isCollapsed={isCollapsed} 
-              pathname={pathname} 
-            />
-            <SidebarItem 
-              icon={FiUser} 
-              text="Profile" 
-              href="/dashboard/profile" 
-              isCollapsed={isCollapsed} 
-              pathname={pathname} 
-            />
-            <SidebarItem 
-              icon={FiSettings} 
-              text="Settings" 
-              href="/dashboard/admin/settings" 
-              isCollapsed={isCollapsed} 
-              pathname={pathname} 
-            />
-          </>
-        )}
-      </nav>
-    </motion.aside>
+          {navItems[role].map(({ icon: Icon, text, href }) => (
+            <SidebarItem key={href} icon={Icon} text={text} href={href} isCollapsed={isCollapsed} pathname={pathname} />
+          ))}
+        </nav>
+
+        {/* Logout Button */}
+        <div className="p-3">
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="flex items-center gap-3 text-red-400 hover:bg-red-600 hover:text-white rounded-md transition-all w-full justify-center"
+          >
+            <FiLogOut size={24} />
+            {!isCollapsed && <span>Logout</span>}
+          </button>
+        </div>
+      </motion.aside>
+
+      {/* Logout Confirmation Modal */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+      />
+    </>
   );
 };
 

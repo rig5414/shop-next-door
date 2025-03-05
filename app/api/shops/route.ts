@@ -11,7 +11,7 @@ export async function GET() {
                 },
             },
         });
-
+        console.log("Shop Data: ", shops);
         return NextResponse.json(shops, { status: 200 });
     } catch (error) {
         console.error("GET /api/shops error:", error);

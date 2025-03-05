@@ -23,45 +23,50 @@ const parsePrice = (price: string | number): Decimal => {
 // GET all orders with optional filters
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const customerId = searchParams.get("customerId");
-    const vendorId = searchParams.get("vendorId");
-    const shopId = searchParams.get("shopId");
+      const { searchParams } = new URL(req.url);
+      const customerId = searchParams.get("customerId");
+      const vendorId = searchParams.get("vendorId");
+      const shopId = searchParams.get("shopId");
 
-    let whereClause: any = {};
+      let whereClause: any = {};
 
-    if (customerId) whereClause.customerId = customerId;
-    if (vendorId) {
-      const shops = await prisma.shop.findMany({
-        where: { vendorId },
-        select: { id: true },
+      if (customerId) whereClause.customerId = customerId;
+      if (vendorId) {
+          const shops = await prisma.shop.findMany({
+              where: { vendorId },
+              select: { id: true },
+          });
+          whereClause.shopId = { in: shops.map((s) => s.id) };
+      }
+      if (shopId) whereClause.shopId = shopId;
+
+      const orders = await prisma.order.findMany({
+          where: whereClause,
+          select: {
+              id: true,
+              customerId: true,
+              shopId: true,
+              total: true,
+              status: true,
+              createdAt: true,
+              updatedAt: true,
+              customer: { select: { id: true, name: true, email: true } },
+              shop: { select: { id: true, name: true } },
+              items: true,
+              transaction: true,
+          },
       });
-      whereClause.shopId = { in: shops.map((s) => s.id) };
-    }
-    if (shopId) whereClause.shopId = shopId;
 
-    const orders = await prisma.order.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        customerId: true,
-        shopId: true,
-        total: true,
-        status: true,  
-        createdAt: true,
-        updatedAt: true,
-        customer: { select: { id: true, name: true, email: true } },
-        shop: { select: { id: true, name: true } },
-        items: true,
-        transaction: true,
-      },
-    });
-    
+      if (orders.length === 0) {
+          console.log("No orders found, returning empty array");
+          return NextResponse.json([]); // Return an empty array here
+      }
 
-    return NextResponse.json(orders.length ? orders : { message: "No orders found", data: [] }, { status: 200 });
+      console.log("Orders found, returning orders");
+      return NextResponse.json(orders, { status: 200 });
   } catch (error) {
-    console.error("Error fetching orders:", error);
-    return NextResponse.json({ error: "Error fetching orders" }, { status: 500 });
+      console.error("Error fetching orders:", error);
+      return NextResponse.json({ error: "Error fetching orders" }, { status: 500 });
   }
 }
 

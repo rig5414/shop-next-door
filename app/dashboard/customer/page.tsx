@@ -7,16 +7,17 @@ import DashboardHeader from "../../../components/dashboard/DashboardHeader";
 import DashboardStats from "../../../components/dashboard/DashboardStats";
 import OrderList from "../../../components/orders/OrderList";
 import ProductList from "../../../components/shop/ProductList";
-import OrderDetailsModal from "../../../components/orders/OrderDetailsModal"; // Import the modal
+import OrderDetailsModal from "../../../components/orders/OrderDetailsModal"; 
 import Link from "next/link";
 import { FiShoppingBag } from "react-icons/fi";
-import { Order } from "../../types";
+import { Order, Product } from "../../types";
+import { ShopStatus } from "@prisma/client";
 
 type Shop = {
   id: string;
   name: string;
   description: string;
-  isOpen: boolean;
+  status: ShopStatus;
 };
 
 const CustomerDashboard = () => {
@@ -24,87 +25,119 @@ const CustomerDashboard = () => {
   const [customerName, setCustomerName] = useState("User");
   const [openShops, setOpenShops] = useState<Shop[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState({
     totalOrders: 0,
     pendingOrders: 0,
     totalSpent: 0,
   });
 
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null); // State for the modal
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      setCustomerName(session.user.name || "User");
-      fetchOrders(session.user.id); // Fetch only this user's orders
-      fetchShops();
-    }
+    if (status !== "authenticated" || !session?.user) return;
+
+    setCustomerName(session.user.name || "User");
+    fetchOrders(session.user.id);
+    fetchShops();
+    fetchProducts();
   }, [session, status]);
 
-  // Fetch customer orders
   const fetchOrders = async (customerId: string) => {
     try {
       const res = await fetch(`/api/orders?customerId=${customerId}`);
-      if (!res.ok) throw new Error("Failed to fetch orders");
-      const data: Order[] = await res.json();
+      const data = await res.json();
 
-      setOrders(data);
+      console.log("Fetched Orders Data:", data);
 
-      // Ensure `order.total` is always a number
+      if (!Array.isArray(data)) {
+        console.error("Orders API did not return an array. Response:", data);
+        setOrders([]);
+        return;
+      }
+
       const totalOrders = data.length;
       const pendingOrders = data.filter((order) => order.orderStatus === "Pending").length;
       const totalSpent = data.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
 
-      setStats({ totalOrders, pendingOrders, totalSpent });
+      setOrders(data);
+      setStats({
+        totalOrders,
+        pendingOrders,
+        totalSpent: isNaN(totalSpent) ? 0 : totalSpent,
+      });
     } catch (error) {
       console.error("Error fetching orders:", error);
+      setOrders([]);
     }
   };
 
-  // Fetch open shops
   const fetchShops = async () => {
     try {
       const res = await fetch("/api/shops");
-      if (!res.ok) throw new Error("Failed to fetch shops");
       const data: Shop[] = await res.json();
 
-      setOpenShops(data.filter((shop) => shop.isOpen));
+      console.log("Fetched Shops Data:", data);
+
+      if (!Array.isArray(data)) {
+        console.error("Shops API did not return an array. Response:", data);
+        setOpenShops([]);
+        return;
+      }
+
+      const openShops = data.filter((shop) => shop.status.toLowerCase() === "active");
+      setOpenShops(openShops);
     } catch (error) {
       console.error("Error fetching shops:", error);
+      setOpenShops([]);
     }
   };
 
-  // Open the order modal
-  const handleOpenModal = (order: Order) => {
-    setSelectedOrder(order);
-  };
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch("/api/product-catalog");
+      const data: Product[] = await res.json();
 
-  // Close the order modal
-  const handleCloseModal = () => {
-    setSelectedOrder(null);
+      console.log("Fetched Products Data:", data);
+
+      if (!Array.isArray(data)) {
+        console.warn("Product Catalog API did not return an array. Response:", data);
+        setRecommendedProducts([]);
+        return;
+      }
+
+      setRecommendedProducts(data.sort(() => 0.5 - Math.random()).slice(0, 6));
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setRecommendedProducts([]);
+    }
   };
 
   return (
     <DashboardLayout role="customer">
-      {/* Dashboard Header */}
       <DashboardHeader title={`Welcome, ${customerName}!`} subtitle="Here’s what’s happening today." />
 
       {/* Dashboard Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
         <DashboardStats title="Total Orders" value={stats.totalOrders.toString()} />
         <DashboardStats title="Pending Orders" value={stats.pendingOrders.toString()} />
-        <DashboardStats title="Total Spent" value={`Ksh. ${stats.totalSpent.toLocaleString()}`} />
+        <DashboardStats title="Total Spent" value={`Ksh. ${stats.totalSpent ? stats.totalSpent.toLocaleString() : "0"}`} />
       </div>
 
       {/* Recent Orders */}
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Recent Orders</h2>
-        <OrderList orders={orders} onOpenModal={handleOpenModal} />
+        {orders.length > 0 ? <OrderList orders={orders} onOpenModal={setSelectedOrder} /> : <p className="text-gray-400">No orders found.</p>}
       </section>
 
       {/* Recommended Products */}
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Recommended for You</h2>
-        <ProductList />
+        {recommendedProducts.length > 0 ? (
+          <ProductList products={recommendedProducts} />
+        ) : (
+          <p className="text-gray-400">No products available.</p>
+        )}
       </section>
 
       {/* Open Shops Section */}
@@ -113,7 +146,7 @@ const CustomerDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {openShops.length > 0 ? (
             openShops.map((shop) => (
-              <Link key={shop.id} href={`/shop/${shop.id}`} className="block bg-gray-900 p-4 rounded-md hover:bg-gray-700 transition">
+              <Link key={shop.id} href={`/dashboard/customer/shops/${shop.id}`} className="block bg-gray-900 p-4 rounded-md hover:bg-gray-700 transition">
                 <div className="flex items-center">
                   <FiShoppingBag className="text-blue-400 w-6 h-6 mr-3" />
                   <div>
@@ -130,7 +163,7 @@ const CustomerDashboard = () => {
       </section>
 
       {/* Order Details Modal */}
-      {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={handleCloseModal} />}
+      {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
     </DashboardLayout>
   );
 };

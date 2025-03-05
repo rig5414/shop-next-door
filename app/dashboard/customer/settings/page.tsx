@@ -16,13 +16,17 @@ const SettingsPage = () => {
         {/* Tabs Navigation */}
         <div className="flex mt-4 border-b border-gray-700">
           <button
-            className={`p-2 px-4 ${activeTab === "notifications" ? "border-b-2 border-blue-500 text-blue-400" : "text-gray-400"}`}
+            className={`p-2 px-4 ${
+              activeTab === "notifications" ? "border-b-2 border-blue-500 text-blue-400" : "text-gray-400"
+            }`}
             onClick={() => setActiveTab("notifications")}
           >
             Notifications
           </button>
           <button
-            className={`p-2 px-4 ${activeTab === "security" ? "border-b-2 border-blue-500 text-blue-400" : "text-gray-400"}`}
+            className={`p-2 px-4 ${
+              activeTab === "security" ? "border-b-2 border-blue-500 text-blue-400" : "text-gray-400"
+            }`}
             onClick={() => setActiveTab("security")}
           >
             Security & Privacy

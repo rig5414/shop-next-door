@@ -1,18 +1,34 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 interface ProfileDetailsProps {
   profileData: {
-    firstName: string;
-    lastName: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
   };
   onProfileUpdate: (updatedData: Partial<{ firstName: string; lastName: string; email: string }>) => void;
 }
 
 const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileUpdate }) => {
+  const { data: session } = useSession();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(profileData);
+
+  // Ensure data is populated from session if missing
+  useEffect(() => {
+    if (session?.user) {
+      const fullName = session.user.name || "";
+      const [firstName, lastName] = fullName.split(" ");
+
+      setFormData({
+        firstName: profileData.firstName || firstName || "",
+        lastName: profileData.lastName || lastName || "",
+        email: profileData.email || session.user.email || "",
+      });
+    }
+  }, [session, profileData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,7 +56,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
               className="w-full bg-gray-800 text-white p-2 rounded-md outline-none border border-gray-600 focus:border-purple-500"
             />
           ) : (
-            <p className="text-white">{profileData.firstName}</p>
+            <p className="text-white">{formData.firstName || "N/A"}</p>
           )}
         </div>
 
@@ -56,7 +72,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
               className="w-full bg-gray-800 text-white p-2 rounded-md outline-none border border-gray-600 focus:border-purple-500"
             />
           ) : (
-            <p className="text-white">{profileData.lastName}</p>
+            <p className="text-white">{formData.lastName || "N/A"}</p>
           )}
         </div>
 
@@ -72,7 +88,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
               className="w-full bg-gray-800 text-white p-2 rounded-md outline-none border border-gray-600 focus:border-purple-500"
             />
           ) : (
-            <p className="text-white">{profileData.email}</p>
+            <p className="text-white">{formData.email || "N/A"}</p>
           )}
         </div>
       </div>

@@ -6,12 +6,13 @@ export async function GET() {
     try {
         const productCatalogs = await prisma.productCatalog.findMany();
 
-        // Add full image URL dynamically
+        // Ensure the image path is correct
         const updatedProductCatalogs = productCatalogs.map(product => ({
             ...product,
-            image: product.image ? `/images/${product.image}` : "/placeholder-product.jpg", // Construct full image path
+            image: product.image.startsWith("/") ? product.image : `/images/${product.image}`, // Avoid double "/images/"
         }));
 
+        console.log("Product Catalog Data: ", updatedProductCatalogs);
         return NextResponse.json(updatedProductCatalogs);
     } catch (error: unknown) {
         console.error("GET /api/product-catalog error:", error);

@@ -72,7 +72,7 @@ export default function PaymentForm({ totalAmount, onClose }: PaymentFormProps) 
               className={`p-2 rounded ${paymentMethod === "cod" ? "bg-blue-600" : "bg-gray-700"}`}
               onClick={() => setPaymentMethod("cod")}
             >
-              Cash on Delivery
+              Cash on Delivery/Pick-up
             </button>
           </div>
         </div>
