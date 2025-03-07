@@ -4,10 +4,11 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import { useSession } from "next-auth/react";
 
 interface Profile {
+  id: string;
   firstName: string;
   lastName: string;
   profilePic: string;
-  role: string;
+  role: "customer" | "vendor" | "admin";
 }
 
 interface ProfileContextType {
@@ -18,49 +19,52 @@ interface ProfileContextType {
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 export const ProfileProvider = ({ children }: { children: ReactNode }) => {
-  const { data: session, update } = useSession(); // Get logged-in user data & update function
+  const { data: session, update } = useSession();
 
   const [profile, setProfile] = useState<Profile>({
+    id: session?.user?.id || "",
     firstName: session?.user?.name?.split(" ")[0] || "User",
     lastName: session?.user?.name?.split(" ")[1] || "",
     profilePic: session?.user?.image || "/images/avatar1.jpg",
-    role: session?.user?.role || "customer",
+    role: (session?.user?.role as "customer" | "vendor" | "admin") || "customer",
   });
 
   useEffect(() => {
     if (session?.user) {
       setProfile((prev) => ({
         ...prev,
+        id: session.user.id || prev.id, // Ensure ID is set correctly
         firstName: session.user.name?.split(" ")[0] || prev.firstName,
         lastName: session.user.name?.split(" ")[1] || prev.lastName,
         profilePic: session.user.image || prev.profilePic,
-        role: session.user.role || prev.role,
+        role: (session.user.role as "customer" | "vendor" | "admin") || prev.role,
       }));
     }
   }, [session]);
 
   const updateProfile = async (newProfile: Profile) => {
     try {
-      const res = await fetch(`/api/users/${session?.user?.id}`, { // ✅ FIXED: Correct API URL
+      const res = await fetch(`/api/users/${profile.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: `${newProfile.firstName} ${newProfile.lastName}`,
-          email: session?.user?.email, // ✅ Ensures email is retained
+          image: newProfile.profilePic,
         }),
       });
 
       if (!res.ok) throw new Error("Failed to update profile");
 
-      setProfile(newProfile); // ✅ Updates local UI instantly
+      setProfile(newProfile);
 
-      // ✅ Also update session to reflect changes globally
+      // Update session globally
       await update({
         ...session,
         user: {
           ...session?.user,
           name: `${newProfile.firstName} ${newProfile.lastName}`,
-          image: newProfile.profilePic, // ✅ profilePic is frontend-only, updates UI
+          image: newProfile.profilePic,
+          role: newProfile.role,
         },
       });
     } catch (error) {
@@ -75,7 +79,6 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Custom hook for easy access
 export const useProfile = () => {
   const context = useContext(ProfileContext);
   if (!context) throw new Error("useProfile must be used within a ProfileProvider");

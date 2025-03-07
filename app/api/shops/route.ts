@@ -2,15 +2,24 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 
 // GET: Fetch all shops with vendor details
-export async function GET() {
+export async function GET(req: Request) {
     try {
-        const shops = await prisma.shop.findMany({
+        const { searchParams } = new URL(req.url);
+        const vendorId = searchParams.get("vendorId");
+
+        const query: any = {
             include: {
                 vendor: {
                     select: { id: true, name: true, email: true },
                 },
             },
-        });
+        };
+
+        if (vendorId) {
+            query.where = { vendorId };
+        }
+
+        const shops = await prisma.shop.findMany(query);
         console.log("Shop Data: ", shops);
         return NextResponse.json(shops, { status: 200 });
     } catch (error) {
@@ -21,6 +30,7 @@ export async function GET() {
         );
     }
 }
+
 
 // POST: Create a new shop (For vendors only)
 export async function POST(req: Request) {

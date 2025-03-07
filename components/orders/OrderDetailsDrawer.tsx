@@ -17,7 +17,7 @@ const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
   onRefund,
   onDelete,
 }) => {
-  const [selectedStatus, setSelectedStatus] = useState(order?.orderStatus || "Pending");
+  const [selectedStatus, setSelectedStatus] = useState(order?.status || "Pending");
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   if (!order) return null;
@@ -31,14 +31,12 @@ const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
   return (
     <div 
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-50"
-      onClick={onClose} // Close drawer when clicking outside
+      onClick={onClose}
     >
-      {/* Drawer */}
       <div 
         className="w-96 bg-gray-900 text-white h-full shadow-lg p-6 overflow-y-auto relative"
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute right-4 top-4 text-red-400 hover:text-red-500 text-xl"
@@ -46,26 +44,23 @@ const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
           &times;
         </button>
 
-        {/* Order Title */}
         <h2 className="text-2xl font-semibold mb-4">Order #{order.id}</h2>
 
         <div className="space-y-4">
-          {/* Customer & Vendor Info */}
           <div className="border-b border-gray-700 pb-2">
-            <p><span className="font-semibold">Customer:</span> {order.customer}</p>
-            <p><span className="font-semibold">Shop:</span> {order.shop}</p>
+            <p><span className="font-semibold">Customer:</span> {order.customer?.name || "Unknown"}</p>
+            <p><span className="font-semibold">Shop:</span> {order.shop?.name || "Unknown"}</p>
           </div>
 
-          {/* Ordered Items */}
           <div>
             <h3 className="font-semibold mb-2">Products:</h3>
             <ul className="space-y-2">
-              {order?.items?.length ? (
-                order.items.map((product: any, index: number) => (
+              {order.items?.length ? (
+                order.items.map((product, index) => (
                   <li key={index} className="flex items-center space-x-3 border-b border-gray-700 pb-2">
                     <Image
                       src={product.image || "/images/default-product.jpg"}
-                      alt={product.name}
+                      alt={product.name || "Product Image"}
                       width={40}
                       height={40}
                       className="w-10 h-10 object-cover rounded"
@@ -84,7 +79,6 @@ const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
             </ul>
           </div>
 
-          {/* Order Summary */}
           <div className="border-t border-gray-700 pt-2">
             <p><span className="font-semibold">Total Amount:</span> ${order.total}</p>
             <p>
@@ -99,7 +93,6 @@ const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
             </p>
           </div>
 
-          {/* Order Status Dropdown */}
           <div className="border-t border-gray-700 pt-2">
             <label htmlFor="order-status" className="font-semibold">Order Status:</label>
             <select
@@ -116,7 +109,6 @@ const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
             </select>
           </div>
 
-          {/* Action Buttons */}
           <div className="mt-4 flex space-x-2">
             {order.paymentStatus === "Paid" && !order.isRefunded && (
               <button
@@ -137,7 +129,6 @@ const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
         </div>
       </div>
 
-      {/* Confirmation Modal for Deleting */}
       {showConfirmDelete && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"

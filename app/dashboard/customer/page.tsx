@@ -134,7 +134,7 @@ const CustomerDashboard = () => {
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Recommended for You</h2>
         {recommendedProducts.length > 0 ? (
-          <ProductList products={recommendedProducts} />
+          <ProductList products={recommendedProducts.map(product => ({ ...product, stock: 0}))} hidePriceAndStock />
         ) : (
           <p className="text-gray-400">No products available.</p>
         )}

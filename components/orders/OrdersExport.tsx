@@ -12,7 +12,7 @@ interface OrdersExportProps {
 const OrdersExport: React.FC<OrdersExportProps> = ({ orders }) => {
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
+    if (!printWindow || !printWindow.document) return; // Ensure it opens properly
 
     printWindow.document.write(`
       <html>
@@ -33,7 +33,7 @@ const OrdersExport: React.FC<OrdersExportProps> = ({ orders }) => {
               <th>ID</th>
               <th>Customer</th>
               <th>Shop</th>
-              <th>Total ($)</th>
+              <th>Total (Ksh.)</th>
               <th>Payment Status</th>
               <th>Order Status</th>
             </tr>
@@ -44,11 +44,11 @@ const OrdersExport: React.FC<OrdersExportProps> = ({ orders }) => {
                 (order) => `
               <tr>
                 <td>${order.id}</td>
-                <td>${order.customer}</td>
-                <td>${order.shop}</td>
-                <td>$${order.total.toFixed(2)}</td>
-                <td>${order.paymentStatus}</td>
-                <td>${order.orderStatus}</td>
+                <td>${order.customer?.name || "Unknown"}</td>
+                <td>${order.shop?.name || "Unknown"}</td>
+                <td>Ksh. ${order.total?.toFixed(2) || "0.00"}</td>
+                <td>${order.paymentStatus || "N/A"}</td>
+                <td>${order.status || "Unknown"}</td>
               </tr>
             `
               )
@@ -65,11 +65,11 @@ const OrdersExport: React.FC<OrdersExportProps> = ({ orders }) => {
 
   const handleExportCSV = () => {
     const csvContent =
-      "ID,Customer,Shop,Total,Payment Status,Order Status\n" +
+      `"ID","Customer","Shop","Total","Payment Status","Order Status"\n` +
       orders
         .map(
           (order) =>
-            `${order.id},${order.customer},${order.shop},${order.total},"${order.paymentStatus}","${order.orderStatus}"`
+            `"${order.id}","${order.customer?.name || "Unknown"}","${order.shop?.name || "Unknown"}","Ksh. ${order.total?.toFixed(2) || "0.00"}","${order.paymentStatus || "N/A"}","${order.status || "Unknown"}"`
         )
         .join("\n");
 

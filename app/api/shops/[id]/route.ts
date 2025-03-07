@@ -28,6 +28,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
 }
 
+
 // PUT: Update a shop (only the vendor can update)
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
     try {

@@ -18,7 +18,7 @@ const OrdersOverview: React.FC<OrdersOverviewProps> = ({
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
       {/* Total Orders */}
-      <div className="bg-gray-900 p-4 rounded-lg shadow-lg text-center">
+      <div className="bg-blue-900 p-4 rounded-lg shadow-lg text-center">
         <h3 className="text-lg font-semibold">Total Orders</h3>
         <p className="text-2xl font-bold">{totalOrders}</p>
       </div>
@@ -43,7 +43,7 @@ const OrdersOverview: React.FC<OrdersOverviewProps> = ({
 
       {/* Optional: Average Order Value */}
       {avgOrderValue !== undefined && (
-        <div className="bg-blue-500 p-4 rounded-lg shadow-lg text-center col-span-2 md:col-span-1">
+        <div className="bg-purple-500 p-4 rounded-lg shadow-lg text-center col-span-2 md:col-span-1">
           <h3 className="text-lg font-semibold">Avg Order Value</h3>
           <p className="text-2xl font-bold">${avgOrderValue.toFixed(2)}</p>
         </div>

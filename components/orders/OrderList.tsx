@@ -30,7 +30,10 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onOpenModal }) => {
         <tbody>
           {Array.isArray(orders) &&
             orders.map((order) => {
-              const statusText = order.status.charAt(0).toUpperCase() + order.status.slice(1); // Capitalize
+              const statusText = order.status
+                ? order.status.charAt(0).toUpperCase() + order.status.slice(1)
+                : "Unknown"; // Fallback if status is undefined
+
               return (
                 <tr key={order.id} className="border-b border-gray-700">
                   <td className="p-2">{order.customer?.name || "Unknown"}</td>
@@ -38,7 +41,9 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onOpenModal }) => {
                   <td className={`p-2 ${statusColors[order.status] || "text-gray-400"}`}>
                     {statusText}
                   </td>
-                  <td className="p-2 text-right">Ksh. {Number(order.total).toFixed(2)}</td>
+                  <td className="p-2 text-right">
+                    Ksh. {order.total ? Number(order.total).toFixed(2) : "0.00"}
+                  </td>
                   <td className="p-2 text-right">
                     <button
                       onClick={() => onOpenModal(order)}
