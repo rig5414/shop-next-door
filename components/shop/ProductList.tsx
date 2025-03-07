@@ -15,7 +15,7 @@ interface ProductListProps {
     products?: Product[];
     shopId?: string;
     shopType?: "local_shop" | "grocery_shop";
-    hidePriceAndStock?: boolean; // New prop to control visibility
+    hidePriceAndStock?: boolean;
 }
 
 const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopType, hidePriceAndStock = false }) => {
@@ -24,6 +24,7 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
     const { data: session } = useSession();
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [modalType, setModalType] = useState<"edit" | "delete" | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         if (!shopId) return;
@@ -50,6 +51,7 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
     const openModal = (type: "edit" | "delete", product: Product) => {
         setSelectedProduct(product);
         setModalType(type);
+        setIsModalOpen(true); // Ensure the modal opens
     };
 
     const handleProductUpdate = (updatedProduct: Product) => {
@@ -66,7 +68,6 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
 
     const handleSubmit = async (data: any) => {
         if (modalType === "edit") {
-            // Call API to update product
             try {
                 const res = await fetch(`/api/products/${data.id}`, {
                     method: "PUT",
@@ -79,7 +80,6 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
                 console.error(error);
             }
         } else if (modalType === "delete") {
-            // Call API to delete product
             try {
                 const res = await fetch(`/api/products/${data.id}`, { method: "DELETE" });
                 if (!res.ok) throw new Error("Failed to delete product");
@@ -88,6 +88,7 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
                 console.error(error);
             }
         }
+        setIsModalOpen(false);
         setModalType(null);
     };
 
@@ -146,8 +147,8 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
             {modalType && selectedProduct && shopType && shopId && (
                 <ProductModal
                     type={modalType}
-                    isOpen={!!modalType}
-                    onClose={() => setModalType(null)}
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
                     product={selectedProduct}
                     onSubmit={handleSubmit}
                     shopType={shopType}
