@@ -8,7 +8,8 @@ interface Vendor {
   id: string;
   name: string;
   shop: string;
-  status: "Approved" | "Pending" | "Suspended";
+  status: "active" | "inactive";
+  category: "local_shop" | "grocery_shop";
 }
 
 const AdminVendorsPage = () => {
@@ -33,17 +34,27 @@ const AdminVendorsPage = () => {
           shopsRes.json(),
         ]);
 
+        console.log("Users Data:", usersData);
+        console.log("Shops Data:", shopsData);
+
         const vendorUsers = usersData.filter((user: any) => user.role === "vendor");
 
-        const formattedVendors = vendorUsers.map((vendor: any) => ({
-          id: vendor.id,
-          name: vendor.name,
-          shop: shopsData.find((s: any) => s.vendorId === vendor.id)?.name || "No Shop",
-          status: vendor.status as "Approved" | "Pending" | "Suspended",
-        }));
+        const formattedVendors = vendorUsers.map((vendor: any) => {
+          const shop = shopsData.find((s: any) => s.vendorId === vendor.id);
+          console.log(`Vendor: ${vendor.name}, Shop:`, shop); // Debugging
+
+          return {
+            id: vendor.id,
+            name: vendor.name,
+            shop: shop?.name || "No Shop",
+            status: vendor.status === "active" ? "active" : "inactive", // Directly using DB value
+            category: shop?.category || "local_shop", // Ensure valid category
+          };
+        });
 
         setVendors(formattedVendors);
       } catch (err) {
+        console.error("Fetch Vendors Error:", err);
         setError((err as Error).message);
       } finally {
         setLoading(false);
@@ -53,16 +64,13 @@ const AdminVendorsPage = () => {
     fetchVendors();
   }, []);
 
+  // Function to change vendor status (active <-> inactive)
   const toggleVendorStatus = async (id: string) => {
     try {
-      setVendors((prev) =>
-        prev.map((v) => (v.id === id ? { ...v, status: "Updating..." as any } : v))
-      );
-
       const vendor = vendors.find((v) => v.id === id);
       if (!vendor) throw new Error("Vendor not found");
 
-      const newStatus = vendor.status === "Approved" ? "Suspended" : "Approved";
+      const newStatus = vendor.status === "active" ? "inactive" : "active";
 
       const response = await fetch(`/api/users/${id}`, {
         method: "PUT",
@@ -72,12 +80,34 @@ const AdminVendorsPage = () => {
 
       if (!response.ok) throw new Error("Failed to update status");
 
+      // Only update state if API call succeeds
       setVendors((prev) =>
         prev.map((v) => (v.id === id ? { ...v, status: newStatus } : v))
       );
     } catch (err) {
       console.error(err);
       alert("Error updating vendor status");
+    }
+  };
+
+  // Function to change vendor category (local_shop <-> grocery_shop)
+  const updateVendorCategory = async (id: string, newCategory: "local_shop" | "grocery_shop") => {
+    try {
+      const response = await fetch(`/api/shops/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: newCategory }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update category");
+
+      // Only update state if API call succeeds
+      setVendors((prev) =>
+        prev.map((v) => (v.id === id ? { ...v, category: newCategory } : v))
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Error updating vendor category");
     }
   };
 
@@ -90,7 +120,11 @@ const AdminVendorsPage = () => {
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : (
-          <VendorsTable vendors={vendors} toggleVendorStatus={toggleVendorStatus} />
+          <VendorsTable
+            vendors={vendors}
+            toggleVendorStatus={toggleVendorStatus}
+            updateVendorCategory={updateVendorCategory}
+          />
         )}
       </div>
     </DashboardLayout>

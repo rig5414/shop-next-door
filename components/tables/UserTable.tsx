@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FiEdit, FiLock, FiUserX, FiLogIn, FiChevronLeft, FiChevronRight } from "react-icons/fi";
-import UserActions from "../settings/UserActions";
+import { FiEdit, FiLock, FiUserX, FiLogIn, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import UserRoleDropdown from "../settings/UserRoleDropdown";
+import bcrypt from "bcryptjs";
 
 interface User {
   id: string;
@@ -19,15 +19,52 @@ interface UsersTableProps {
   toggleUserStatus: (id: string) => void;
   handleLoginAsUser: (id: string) => void;
   updateUserRole: (id: string, role: string) => void;
+  deleteUser: (id: string) => void;
+  updateUserDetails: (id: string, updatedUser: Partial<User>) => void;
 }
 
-const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handleLoginAsUser, updateUserRole }) => {
+const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handleLoginAsUser, updateUserRole, updateUserDetails, deleteUser }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("");
   const usersPerPage = 5;
+
+// Open edit modal
+const openEditModal = (user: User) => {
+  const [fName, lName] = user.name.split(" ");
+  setEditUser(user);
+  setFirstName(fName || "");
+  setLastName(lName || "");
+  setEmail(user.email);
+  setRole(user.role);
+  setShowModal(true);
+};
+
+// Handle update user
+const handleUpdateUser = async () => {
+  if (!editUser) return;
+  const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+
+  const updatedUser: Partial<User> = {
+    name: `${firstName} ${lastName}`,
+    email,
+    role,
+    ...(hashedPassword && { password: hashedPassword }),
+  };
+
+  updateUserDetails(editUser.id, updatedUser);
+  setShowModal(false);
+};
 
   // Filter users based on search and filters
   const filteredUsers = users.filter((user) => {
@@ -55,11 +92,19 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handle
     setSelectedUsers([]);
   };
 
-  const handleRoleChange = (userId: string, event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newRole = event.target.value;
-    updateUserRole(userId, newRole);
-  } 
+  // Handle delete confirmation
+  const handleDeleteClick = (user: User) => {
+    setUserToDelete(user);
+    setShowModal(true);
+  };
 
+  const confirmDelete = () => {
+    if (userToDelete) {
+      deleteUser(userToDelete.id);
+      setShowModal(false);
+      setUserToDelete(null);
+    }
+  };
 
   return (
     <div className="bg-gray-800 p-4 rounded-lg shadow-lg text-white">
@@ -82,8 +127,8 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handle
         >
           <option value="">All Roles</option>
           <option value="admin">Admin</option>
-          <option value="editor">Editor</option>
-          <option value="user">User</option>
+          <option value="editor">Vendor</option>
+          <option value="user">Customer</option>
         </select>
 
         <select
@@ -143,7 +188,6 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handle
               <td className="p-2">{user.name}</td>
               <td className="p-2">{user.email}</td>
               <td className="p-2">
-                {/* Replacing inline select with UserRoleDropdown */}
                 <UserRoleDropdown
                   role={user.role}
                   onRoleChange={(newRole) => updateUserRole(user.id, newRole)}
@@ -153,42 +197,48 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handle
                 {user.status}
               </td>
               <td className="p-2 flex space-x-3">
-                {/* Edit User */}
-                <Link href={`/dashboard/admin/users/${user.id}`} className="text-blue-400 hover:text-blue-300" aria-label={`Edit ${user.name}'s details`}>
-                  <FiEdit size={18} title="Edit Credentials" />
-                </Link>
+              <button onClick={() => openEditModal(user)} className="text-blue-400 hover:text-blue-300" title="Edit User" aria-label={`Edit ${user.name}`}>
+                  <FiEdit size={18} />
+                </button>
 
-                {/* Toggle Status */}
-                <button
-                  onClick={() => toggleUserStatus(user.id)}
-                  className="text-yellow-400 hover:text-yellow-300"
+                <button onClick={() => toggleUserStatus(user.id)} className="text-yellow-400 hover:text-yellow-300"
                   title={user.status === "Active" ? "Suspend User" : "Activate User"}
                   aria-label={user.status === "Active" ? `Suspend ${user.name}` : `Activate ${user.name}`}
                 >
                   {user.status === "Active" ? <FiUserX size={18} /> : <FiLock size={18} />}
                 </button>
 
-                {/* Impersonate User */}
-                <button
-                  onClick={() => handleLoginAsUser(user.id)}
-                  className="text-green-400 hover:text-green-300"
-                  title="Log in as User"
-                  aria-label={`Log in as ${user.name}`}
-                >
+                <button onClick={() => handleLoginAsUser(user.id)} className="text-green-400 hover:text-green-300" title="Log In As User" aria-label={`Log in as ${user.name}`}>
                   <FiLogIn size={18} />
                 </button>
 
-                {/* User Actions */}
-                <UserActions
-                onEdit={() => console.log(`Editing user: ${user.id}`)}
-                onSuspend={() => toggleUserStatus(user.id)}
-                onDelete={() => console.log(`Deleting user: ${user.id}`)}
-                />
+                <button onClick={() => handleDeleteClick(user)} className="text-red-500 hover:text-red-400" title="Delete User" aria-label={`Delete ${user.name}`}>
+                  <FiTrash2 size={18} />
+                </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {/* Edit User Modal */}
+      {showModal && editUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-white">
+            <h3 className="text-lg font-bold mb-4">Edit User</h3>
+            <input type="text" placeholder="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" />
+            <input type="text" placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" />
+            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" />
+            <input type="password" placeholder="New Password (Optional)" value={password} onChange={(e) => setPassword(e.target.value)} className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" />
+            <UserRoleDropdown role={role} onRoleChange={setRole} />
+
+            <div className="flex justify-end space-x-3 mt-4">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-600 rounded-lg">Cancel</button>
+              <button onClick={handleUpdateUser} className="px-4 py-2 bg-blue-600 rounded-lg">Update</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pagination Controls */}
       <div className="flex justify-between items-center mt-4">
@@ -196,6 +246,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handle
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}
           className="px-3 py-1 bg-gray-600 rounded-lg disabled:opacity-50"
+          title="Previous Page"
           aria-label="Go to previous page"
         >
           <FiChevronLeft />
@@ -207,11 +258,25 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handle
           onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
           disabled={currentPage === totalPages}
           className="px-3 py-1 bg-gray-600 rounded-lg disabled:opacity-50"
+          title="Next Page"
           aria-label="Go to next page"
         >
           <FiChevronRight />
         </button>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showModal && userToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-white">
+            <p>Are you sure you want to delete {userToDelete.name}?</p>
+            <div className="flex justify-end space-x-3 mt-4">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-600 rounded-lg">Cancel</button>
+              <button onClick={confirmDelete} className="px-4 py-2 bg-red-600 rounded-lg">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

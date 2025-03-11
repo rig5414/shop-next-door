@@ -8,6 +8,8 @@ import UsersTable from "../../../components/tables/UserTable";
 import VendorsTable from "../../../components/tables/VendorTable";
 import OrdersChart from "../../../components/dashboard/charts/OrdersChart";
 import RevenueChart from "../../../components/dashboard/charts/RevenueChart";
+import { useSession } from "next-auth/react";
+import { useProfile } from "../../../components/profile/ProfileContext";
 import Link from "next/link";
 
 interface User {
@@ -26,6 +28,10 @@ interface Vendor {
 }
 
 const AdminDashboard = () => {
+  const { data: session } = useSession();
+  const { profile } = useProfile(); 
+  const adminId = session?.user?.id;
+  
   const [users, setUsers] = useState<User[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
@@ -40,31 +46,29 @@ const AdminDashboard = () => {
       try {
         setLoading(true);
 
-        // Fetch Users
-        const usersRes = await fetch("/api/users");
+        const [usersRes, vendorsRes, ordersRes, transactionsRes] = await Promise.all([
+          fetch("/api/users"),
+          fetch("/api/shops"),
+          fetch("/api/orders"),
+          fetch("/api/transactions"),
+        ]);
+
         const usersData = await usersRes.json();
+        const vendorsData = await vendorsRes.json();
+        const ordersData = await ordersRes.json();
+        const transactionsData = await transactionsRes.json();
+
         setUsers(usersData);
         setTotalUsers(usersData.length);
-
-        // Fetch Vendors (Shops)
-        const vendorsRes = await fetch("/api/shops");
-        const vendorsData = await vendorsRes.json();
         setVendors(vendorsData);
         setTotalVendors(vendorsData.length);
-
-        // Fetch Orders
-        const ordersRes = await fetch("/api/orders");
-        const ordersData = await ordersRes.json();
         setTotalOrders(ordersData.length);
 
-        // Fetch Revenue (Sum of successful transactions)
-        const transactionsRes = await fetch("/api/transactions");
-        const transactionsData = await transactionsRes.json();
         const totalRevenue = transactionsData
           .filter((t: any) => t.status === "successful")
           .reduce((acc: number, curr: any) => acc + parseFloat(curr.amount), 0);
-        setPlatformRevenue(`Ksh ${totalRevenue.toLocaleString()}`);
 
+        setPlatformRevenue(`Ksh ${totalRevenue.toLocaleString()}`);
         setLoading(false);
       } catch (err) {
         setError("Failed to load dashboard data.");
@@ -74,6 +78,27 @@ const AdminDashboard = () => {
 
     fetchDashboardData();
   }, []);
+
+  const toggleVendorStatus = async (id: string) => {
+    try {
+      const vendor = vendors.find((v) => v.id === id);
+      if (!vendor) return;
+
+      const newStatus = vendor.status === "Approved" ? "Suspended" : "Approved";
+
+      await fetch(`/api/shops/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      setVendors((prev) =>
+        prev.map((v) => (v.id === id ? { ...v, status: newStatus } : v))
+      );
+    } catch (err) {
+      console.error("Failed to update vendor status", err);
+    }
+  };
 
   if (loading) {
     return (
@@ -95,7 +120,7 @@ const AdminDashboard = () => {
 
   return (
     <DashboardLayout role="admin">
-      <DashboardHeader title="Welcome, Admin!" subtitle="Manage users, vendors, orders, and shops." />
+      <DashboardHeader title={`Welcome, ${profile.firstName} ${profile.lastName}!`} subtitle="Manage users, vendors, orders, and shops." />
 
       {/* Sales & Revenue Insights */}
       <section className="mt-6">
@@ -122,7 +147,7 @@ const AdminDashboard = () => {
             View All Users →
           </Link>
         </div>
-        <UsersTable users={users}/>
+        <UsersTable users={users} />
       </section>
 
       {/* Vendor Management Section */}
@@ -133,7 +158,7 @@ const AdminDashboard = () => {
             View All Vendors →
           </Link>
         </div>
-        <VendorsTable vendors={vendors}/>
+        <VendorsTable vendors={vendors} toggleVendorStatus={toggleVendorStatus} />
       </section>
     </DashboardLayout>
   );
