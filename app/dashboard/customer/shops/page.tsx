@@ -9,7 +9,7 @@ type Shop = {
   id: string;
   name: string;
   description: string;
-  ShopType: "local_shop" | "grocery_shop";
+  type: "local_shop" | "grocery_shop";
   status: "active" | "inactive";
 };
 
@@ -28,6 +28,9 @@ const ShopsPage = () => {
         if (!response.ok) throw new Error("Failed to fetch shops");
         const data: Shop[] = await response.json();
         console.log("Fetched Shops:", data);
+        data.forEach(shop => {
+          console.log(`Shop ID: ${shop.id}, Name: ${shop.name}, Type: ${shop.type}, Status: ${shop.status}`);
+      });
         setShops(data);
       } catch (error) {
         console.error("Error fetching shops:", error);
@@ -50,10 +53,10 @@ const ShopsPage = () => {
     console.log("Shop Type Filter:", shopTypeFilter);
 
     const filtered = shops.filter((shop) => {
-      console.log(`Checking shop: ${shop.name} | Type: ${shop.ShopType}`);
+      console.log(`Checking shop: ${shop.name} | Type: ${shop.type}`);
       
       const nameMatch = shop.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const typeMatch = shopTypeFilter === null || shop.ShopType === shopTypeFilter;
+      const typeMatch = shopTypeFilter === null || shop.type === shopTypeFilter;
       
       console.log(`Name Match: ${nameMatch}, Type Match: ${typeMatch}`);
       

@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
         return NextResponse.json({
             ...productCatalog,
-            image: productCatalog.image ? `/images/${productCatalog.image}` : "/placeholder-product.jpg"
+            image: productCatalog.image ? `${productCatalog.image}` : "/placeholder-product.jpg"
         });
     } catch (error) {
         console.error("GET /api/product-catalog/:id error:", error instanceof Error ? error.message : error);

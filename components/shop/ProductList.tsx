@@ -8,7 +8,7 @@ interface Product {
     name: string;
     price: number;
     stock: number;
-    imageUrl?: string;
+    image?: string;
 }
 
 interface ProductListProps {
@@ -98,9 +98,9 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
                 <p className="text-gray-400">Loading products...</p>
             ) : displayedProducts.length > 0 ? (
                 displayedProducts.map((product) => {
-                    const imageSrc = product.imageUrl?.trim() ? product.imageUrl : "/images/placeholder.jpg";
+                    const imageSrc = product.image?.trim() ? product.image : "/images/placeholder.jpg";
                     return (
-                        <div key={product.id} className="bg-gray-900 p-4 rounded-lg shadow-lg">
+                        <div key={product.id} className="bg-gray-900 p-4 rounded-lg hover:scale-105 hover:shadow-lg hover:bg-gray-800 transition">
                             <Image
                                 src={imageSrc}
                                 alt={product.name || "Product Image"}

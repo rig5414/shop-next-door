@@ -6,10 +6,24 @@ export async function GET() {
     try {
         const productCatalogs = await prisma.productCatalog.findMany();
 
-        const updatedProductCatalogs = productCatalogs.map(product => ({
-            ...product,
-            image: product.image ? `/images/${product.image}` : "/placeholder-product.jpg",
-        }));
+        const updatedProductCatalogs = productCatalogs.map(product => {
+            console.log("Original Image Path:", product.image);
+        
+            let formattedImage = "/placeholder-product.jpg";
+        
+            if (product.image) {
+                formattedImage = product.image.replace(/\/{2,}/g, "/");
+            }
+        
+            console.log("Formatted Image Path:", formattedImage);
+        
+            return {
+                ...product,
+                image: formattedImage
+            };
+        });
+
+        console.log("Final Product Data Sent:", updatedProductCatalogs);
 
         return NextResponse.json(updatedProductCatalogs);
     } catch (error) {
@@ -17,6 +31,7 @@ export async function GET() {
         return NextResponse.json({ error: "Failed to fetch product catalogs" }, { status: 500 });
     }
 }
+
 
 // POST: Create a new product catalog
 export async function POST(req: Request) {
