@@ -44,11 +44,11 @@ const SalesChart = ({ className= "" }) => {
   useEffect(() => {
     if (timeframe === "daily") {
       setSalesData({
-        labels: ["00:00", "06:00", "12:00", "18:00", "23:59"],
+        labels: ["07:30", "10:36", "12:52", "18:05", "19:59"],
         datasets: [
           {
             type: "bar" as const,
-            label: "Sales ($)",
+            label: "Sales (Ksh.)",
             data: [20, 50, 100, 150, 200],
             backgroundColor: "rgba(75, 192, 192, 0.6)",
             borderColor: "rgba(75, 192, 192, 1)",
@@ -70,7 +70,7 @@ const SalesChart = ({ className= "" }) => {
         datasets: [
           {
             type: "bar" as const,
-            label: "Sales ($)",
+            label: "Sales (Ksh.)",
             data: [3200, 4500, 5000, 6200],
             backgroundColor: "rgba(75, 192, 192, 0.6)",
             borderColor: "rgba(75, 192, 192, 1)",
@@ -92,7 +92,7 @@ const SalesChart = ({ className= "" }) => {
         datasets: [
           {
             type: "bar" as const,
-            label: "Sales ($)",
+            label: "Sales (Ksh.)",
             data: [250, 420, 380, 600, 750, 900, 1200],
             backgroundColor: "rgba(75, 192, 192, 0.6)",
             borderColor: "rgba(75, 192, 192, 1)",

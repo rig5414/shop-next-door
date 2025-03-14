@@ -9,7 +9,7 @@ type Shop = {
   id: string;
   name: string;
   description: string;
-  shopType: "local_shop" | "grocery_shop";
+  ShopType: "local_shop" | "grocery_shop";
   status: "active" | "inactive";
 };
 
@@ -50,10 +50,10 @@ const ShopsPage = () => {
     console.log("Shop Type Filter:", shopTypeFilter);
 
     const filtered = shops.filter((shop) => {
-      console.log(`Checking shop: ${shop.name} | Type: ${shop.shopType}`);
+      console.log(`Checking shop: ${shop.name} | Type: ${shop.ShopType}`);
       
       const nameMatch = shop.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const typeMatch = shopTypeFilter === null || shop.shopType === shopTypeFilter;
+      const typeMatch = shopTypeFilter === null || shop.ShopType === shopTypeFilter;
       
       console.log(`Name Match: ${nameMatch}, Type Match: ${typeMatch}`);
       

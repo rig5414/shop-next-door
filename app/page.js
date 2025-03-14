@@ -4,8 +4,27 @@ import Footer from "../components/layout/Footer";
 import Image from "next/image";
 import Link from "next/link";
 import { PhoneIcon, MessageCircleIcon, MailIcon } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
+import React from "react";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 export default function Home() {
+  const productImages = [
+    "/images/eggs.jpg",
+    "/images/sugar.jpg",
+    "/images/carrot.jpg",
+    "/images/mosquitocoil.jpg",
+    "/images/potatoes.jpg",
+    "/images/toiletpaper.jpg",
+    "/images/tomato.jpg",
+    "/images/wheatflour.jpg",
+    "/images/apples.jpg",
+    "/images/lemons.jpg",
+    "/images/mangoes.jpg",
+    "/images/candle.jpg",
+  ];
   return (
     <div className="flex flex-col min-h-screen bg-gray-950 text-white">
       <Navbar />
@@ -93,29 +112,77 @@ export default function Home() {
         </div>
       </section>
       {/* About Section */}
-<section className="py-16 px-6 bg-gray-100 dark:bg-gray-900" id="about">
-  <div className="max-w-4xl mx-auto text-center">
-    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-      About Shop Next Door
-    </h2>
-    <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
-      Shop Next Door is a platform designed to connect customers with local vendors, making it easier to discover and shop from small businesses in their community.
-    </p>
-    <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
-      Our mission is to empower vendors by providing them with an easy-to-use online store while giving customers a seamless shopping experience with trusted local sellers.
-    </p>
-    <p className="text-lg text-gray-700 dark:text-gray-300">
-      Whether you&#39;re a vendor managing your shop, a customer looking for everyday essentials, Shop Next Door is built to serve your needs.
-    </p>
+      <section className="py-16 px-6 bg-gray-100 dark:bg-gray-900" id="about">
+       <div className="max-w-4xl mx-auto text-center">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+          About Shop Next Door
+        </h2>
+        <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
+         Shop Next Door is a platform designed to connect customers with local vendors, making it easier to discover and shop from small businesses in their community.
+         </p>
+        <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
+         Our mission is to empower vendors by providing them with an easy-to-use online store while giving customers a seamless shopping experience with trusted local sellers.
+        </p>
+        <p className="text-lg text-gray-700 dark:text-gray-300">
+          Whether you&#39;re a vendor managing your shop or a customer looking for everyday essentials, Shop Next Door is built to serve your needs.
+         </p>
+       </div>
+      </section>
+
+     {/* Marketplace Section */}
+<section className="py-12 md:py-16 px-4 md:px-6" id="marketplace">
+  <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-10">Marketplace</h2>
+  <p className="text-base md:text-lg text-center mb-6 md:mb-8">Explore our wide range of products</p>
+  <div className="max-w-screen-xl mx-auto overflow-hidden">
+    <Slider
+      dots={true}
+      infinite={true}
+      speed={700}
+      slidesToShow={4}
+      slidesToScroll={2}
+      autoplay={true}
+      autoplaySpeed={3000}
+      responsive={[
+        {
+          breakpoint: 1024,
+          settings: {
+            slidesToShow: 3,
+            slidesToScroll: 1,
+            infinite: true,
+            dots: true,
+          },
+        },
+        {
+          breakpoint: 600,
+          settings: {
+            slidesToShow: 2,
+            slidesToScroll: 1,
+          },
+        },
+        {
+          breakpoint: 480,
+          settings: {
+            slidesToShow: 1,
+            slidesToScroll: 1,
+          },
+        },
+      ]}
+    >
+      {productImages.map((imageUrl, index) => (
+        <div key={index} className="px-1.5">
+          <div className="relative h-48 md:h-64 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-transform duration-300 hover:scale-105">
+            <Image
+              src={imageUrl}
+              alt={`Product ${index + 1}`}
+              fill
+              className="object-cover"
+            />
+          </div>
+        </div>
+      ))}
+    </Slider>
   </div>
 </section>
-
-
-      {/* Marketplace Section */}
-        <section className="py-16 px-6" id="marketplace">
-          <h2 className="text-3xl font-bold text-center mb-10">Marketplace</h2>
-            <p className="text-lg text-center">Explore our wide range of products and vendors.</p>
-      </section>
 
       {/* Customer Testimonials Section */}
       <section className="py-16 px-6 bg-gray-900">
@@ -124,7 +191,7 @@ export default function Home() {
           {/* Testimonial 1 */}
           <div className="max-w-md bg-gray-800 p-6 rounded-lg shadow-lg">
             <Image 
-              src="/images/customer3.jpg" 
+              src="/images/avatar4.jpg" 
               alt="Satisfied customer" 
               width={80} 
               height={80} 
@@ -135,13 +202,13 @@ export default function Home() {
             <p className="text-gray-400 italic">
               This platform makes shopping locally so easy! Fast deliveries and great customer service.
             </p>
-            <h4 className="font-semibold mt-4">- Jane Doe</h4>
+            <h4 className="font-semibold mt-4">- Rita Ora</h4>
           </div>
 
           {/* Testimonial 2 */}
           <div className="max-w-md bg-gray-800 p-6 rounded-lg shadow-lg">
             <Image 
-              src="/images/customer4.jpg" 
+              src="/images/avatar5.jpg" 
               alt="Happy customer" 
               width={80} 
               height={80} 
@@ -152,33 +219,31 @@ export default function Home() {
             <p className="text-gray-400 italic">
               I love supporting small businesses, and this app connects me with amazing vendors!
             </p>
-            <h4 className="font-semibold mt-4">- John Smith</h4>
+            <h4 className="font-semibold mt-4">- Kevin Rono</h4>
           </div>
         </div>
       </section>
 
       {/* Contact Section */}
-<section className="py-16 px-6 bg-white dark:bg-gray-950" id="contact">
-  <div className="max-w-3xl mx-auto text-center">
-    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Contact Us</h2>
-    <p className="text-lg text-gray-700 dark:text-gray-300 mb-8">
-      Get in touch with us for inquiries, support, or collaborations.
-    </p>
-    
-    <div className="flex flex-col items-center space-y-6">
+      <section className="py-16 px-6 bg-white dark:bg-gray-950" id="contact">
+       <div className="max-w-3xl mx-auto text-center">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Contact Us</h2>
+        <p className="text-lg text-gray-700 dark:text-gray-300 mb-8">
+          Get in touch with us for inquiries, support, or collaborations.
+        </p>
+       <div className="flex flex-col items-center space-y-6">
       {/* Phone & WhatsApp */}
-      <div className="flex items-center space-x-4 text-lg text-gray-700 dark:text-gray-300">
+       <div className="flex items-center space-x-4 text-lg text-gray-700 dark:text-gray-300">
         <PhoneIcon className="w-6 h-6 text-blue-500" />
         <MessageCircleIcon className="w-6 h-6 text-green-500" />
         <span>+254 711 580 663</span>
         <span>+254 732 082 389</span>
       </div>
       <div className="flex items-center space-x-4 text-lg text-gray-700 dark:text-gray-300">
-        <MessageCircleIcon className="w-6 h-6 text-green-500" />
+        <FaWhatsapp className="w-7 h-7 text-green-500" />
         <span>WhatsApp: +254 711 580 663</span>
         <span>+254 732 082 389</span>
       </div>
-
       {/* Email */}
       <div className="flex items-center space-x-4 text-lg text-gray-700 dark:text-gray-300">
         <MailIcon className="w-6 h-6 text-red-500" />
@@ -186,22 +251,18 @@ export default function Home() {
           manassehtelle90@gmail.com
         </a>
       </div>
-
       {/* Instagram */}
-<div className="flex items-center space-x-4 text-lg text-gray-700 dark:text-gray-300">
-  <svg className="w-6 h-6 text-pink-500" fill="currentColor" viewBox="0 0 24 24">
-    <path d="M7.75 2A5.75 5.75 0 0 0 2 7.75v8.5A5.75 5.75 0 0 0 7.75 22h8.5A5.75 5.75 0 0 0 22 16.25v-8.5A5.75 5.75 0 0 0 16.25 2h-8.5ZM12 7.375A4.625 4.625 0 1 1 7.375 12 4.631 4.631 0 0 1 12 7.375Zm0 1.5A3.125 3.125 0 1 0 15.125 12 3.13 3.13 0 0 0 12 8.875ZM16.75 6a.75.75 0 1 1-.75.75.75.75 0 0 1 .75-.75Z" />
-  </svg>
-  <a href="https://www.instagram.com/mana_sseh7" target="_blank" className="hover:underline">
-    @mana_sseh7
-  </a>
-</div>
-
+      <div className="flex items-center space-x-4 text-lg text-gray-700 dark:text-gray-300">
+       <svg className="w-6 h-6 text-pink-500" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M7.75 2A5.75 5.75 0 0 0 2 7.75v8.5A5.75 5.75 0 0 0 7.75 22h8.5A5.75 5.75 0 0 0 22 16.25v-8.5A5.75 5.75 0 0 0 16.25 2h-8.5ZM12 7.375A4.625 4.625 0 1 1 7.375 12 4.631 4.631 0 0 1 12 7.375Zm0 1.5A3.125 3.125 0 1 0 15.125 12 3.13 3.13 0 0 0 12 8.875ZM16.75 6a.75.75 0 1 1-.75.75.75.75 0 0 1 .75-.75Z" />
+       </svg>
+       <a href="https://www.instagram.com/mana_sseh7" target="_blank" className="hover:underline">
+        @mana_sseh7
+     </a>
+    </div>
     </div>
   </div>
 </section>
-
-
       <Footer />
 
       {/* Custom Styles */}

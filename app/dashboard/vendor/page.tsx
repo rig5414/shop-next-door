@@ -75,7 +75,7 @@ const VendorDashboard = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-        <DashboardStats title="Total Sales" value="$5,320" />
+        <DashboardStats title="Total Sales" value="Ksh. 5,320" />
         <DashboardStats title="Total Orders" value="142" />
         <DashboardStats title="Pending Orders" value="8" />
       </div>

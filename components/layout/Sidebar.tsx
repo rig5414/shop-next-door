@@ -6,7 +6,7 @@ import { FaStore, FaUsers, FaChartBar } from "react-icons/fa";
 import { IconType } from "react-icons";
 import { motion } from "framer-motion";
 import SidebarItem from "./SidebarItem";
-import LogoutModal from "../auth/LogOutModal"; // Import the modal
+import LogoutModal from "../auth/LogOutModal";
 
 interface SidebarProps {
   isCollapsed: boolean;
