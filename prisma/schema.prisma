@@ -91,6 +91,8 @@ model Transaction {
   orderId    String            @unique
   customerId String
   amount     Decimal
+  method     PaymentMethod     @default(cod)
+  phoneNumber String?
   status     TransactionStatus
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
@@ -125,4 +127,10 @@ enum TransactionStatus {
 enum ShopType {
   local_shop
   grocery_shop
+}
+
+enum PaymentMethod {
+  mpesa
+  airtel
+  cod
 }

@@ -1,62 +1,108 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
+import { prisma } from "../../../lib/prisma";
 
-let mockTransactions: Record<string, any> = {}; // Store mock transactions
+// Allowed payment methods
+const ALLOWED_METHODS = ["mpesa", "airtel", "cod"];
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === "POST") {
-    const { orderId, amount, method } = req.body;
+// POST: Create a new payment
+export async function POST(req: Request) {
+  try {
+    const { orderId, customerId, amount, method, phoneNumber } = await req.json();
 
-    if (!orderId || !amount || !method) {
-      return res.status(400).json({ error: "Missing required fields" });
+    // Validate input
+    if (!orderId || !customerId || !amount || !method) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const transactionId = `txn_${Date.now()}`;
-    mockTransactions[transactionId] = {
-      transactionId,
-      orderId,
-      amount,
-      method,
-      status: "pending",
-    };
+    if (isNaN(amount) || amount <= 0) {
+      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    }
 
-    return res.status(201).json({ transactionId, status: "pending" });
+    if (!ALLOWED_METHODS.includes(method)) {
+      return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
+    }
+
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // If method is COD, mark as successful instantly
+    const status = method === "cod" ? "successful" : "pending";
+
+    const transaction = await prisma.transaction.create({
+      data: {
+        orderId,
+        customerId,
+        amount,
+        method,
+        phoneNumber: method !== "cod" ? phoneNumber : null,
+        status,
+      },
+    });
+
+    // If COD, update order status immediately
+    if (method === "cod") {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status: "completed" },
+      });
+    }
+
+    return NextResponse.json({ transactionId: transaction.id, status }, { status: 201 });
+  } catch (error) {
+    console.error("Payment processing failed:", error);
+    return NextResponse.json(
+      { error: "Failed to process payment", details: (error as Error).message },
+      { status: 500 }
+    );
   }
+}
 
-  if (req.method === "GET") {
-    const { transactionId } = req.query;
 
-    if (!transactionId || typeof transactionId !== "string") {
-      return res.status(400).json({ error: "Transaction ID is required" });
-    }
+// GET: Fetch a payment status
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const transactionId = searchParams.get("transactionId");
 
-    const transaction = mockTransactions[transactionId];
+    if (!transactionId) return NextResponse.json({ error: "Transaction ID required" }, { status: 400 });
 
-    if (!transaction) {
-      return res.status(404).json({ error: "Transaction not found" });
-    }
+    const transaction = await prisma.transaction.findUnique({ where: { id: transactionId } });
 
-    return res.status(200).json(transaction);
+    if (!transaction) return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+
+    return NextResponse.json(transaction);
+  } catch (error) {
+    console.error("Error fetching transaction:", error);
+    return NextResponse.json({ error: "Failed to retrieve transaction" }, { status: 500 });
   }
+}
 
-  if (req.method === "PATCH") {
-    const { transactionId } = req.query;
-    const { status } = req.body;
+// PATCH: Update payment status (e.g., from external callback)
+export async function PATCH(req: Request) {
+  try {
+    const { transactionId, status } = await req.json();
 
-    if (!transactionId || typeof transactionId !== "string") {
-      return res.status(400).json({ error: "Transaction ID is required" });
+    if (!transactionId || !["successful", "failed"].includes(status)) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     }
 
-    if (!status || !["successful", "failed"].includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
+    const transaction = await prisma.transaction.update({
+      where: { id: transactionId },
+      data: { status },
+    });
+
+    if (status === "successful") {
+      await prisma.order.update({
+        where: { id: transaction.orderId },
+        data: { status: "completed" },
+      });
     }
 
-    if (!mockTransactions[transactionId]) {
-      return res.status(404).json({ error: "Transaction not found" });
-    }
-
-    mockTransactions[transactionId].status = status;
-    return res.status(200).json({ transactionId, status });
+    return NextResponse.json({ transactionId, status });
+  } catch (error) {
+    console.error("Failed to update transaction:", error);
+    return NextResponse.json({ error: "Failed to update payment" }, { status: 500 });
   }
-
-  return res.status(405).json({ error: "Method not allowed" });
 }

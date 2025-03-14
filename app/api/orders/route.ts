@@ -110,7 +110,7 @@ export async function POST(req: Request) {
         items.map((item) => tx.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.quantity } } }))
       );
 
-      await tx.transaction.create({ data: { orderId: order.id, customerId: order.customerId, status: "pending", amount: total } });
+      await tx.transaction.create({ data: { orderId: order.id, customerId: order.customerId, status: "successful", amount: total } });
 
       return order;
     });
