@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useUserRole } from "@/utils/auth";
+import { useUserRole } from "../../utils/auth";
 
 export default function Dashboard() {
   const router = useRouter();

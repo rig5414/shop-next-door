@@ -1,9 +1,10 @@
-import { useUser } from "@auth0/nextjs-auth0/client";
+import { useSession } from "next-auth/react";
 
 export function useUserRole() {
-  const { user, isLoading } = useUser();
-  if (isLoading) return { role: null, isLoading };
+  const { data: session, status } = useSession();
 
-  const roles = user?.["https://shopnextdoor.com/roles"] || [];
-  return { role: roles[0] || null, isLoading };
+  if (status === "loading") return { role: null, isLoading: true };
+
+  const role = session?.user?.role || null;
+  return { role, isLoading: false };
 }
