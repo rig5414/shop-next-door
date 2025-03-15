@@ -20,7 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed, role }) 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
-    signOut({ callbackUrl: "/" }); // Redirect to landing page
+    signOut({ callbackUrl: "/auth/login" }); // Redirect to landing page
   };
 
   const navItems: Record<

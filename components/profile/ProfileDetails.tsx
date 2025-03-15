@@ -15,10 +15,11 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
   const { data: session } = useSession();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(profileData);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Ensure data is populated from session if missing
   useEffect(() => {
-    if (session?.user) {
+    if (session?.user?.id) {
       const fullName = session.user.name || "";
       const [firstName, lastName] = fullName.split(" ");
 
@@ -34,9 +35,56 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!session?.user?.id) return;
+    if (
+      formData.firstName === profileData.firstName &&
+      formData.lastName === profileData.lastName &&
+      formData.email === profileData.email
+    ) {
+      setIsEditing(false);
+      return;
+    }
+
     setIsEditing(false);
-    onProfileUpdate(formData);
+    const updatedProfile = {
+      name: `${formData.firstName} ${formData.lastName}`,
+      email: formData.email,
+    };
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    try {
+      const res = await fetch(`/api/users/${session.user.id}`,{
+        method: "PUT",
+        headers: { "Content-Type": "application/json"},
+        body: JSON.stringify(updatedProfile),
+        signal: signal,
+      });
+      if (!res.ok) throw new Error("Failed to update profile");
+      const data = await res.json();
+      const nameParts = data.name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || ""
+
+      onProfileUpdate({ firstName, lastName, email: data.email, });
+
+      await fetch (`/api/users/${session.user.id}`, {cache: "no-store", signal: signal});
+    }  catch (err) {
+      if (err instanceof Error) {
+      if (err.name === 'AbortError') {
+        console.log('Fetch aborted');
+      } else {
+        console.error("Profile update error:", err.message);
+        alert("Error updating profile. Please try again.");
+      }
+    } else {
+      console.error("An unknown error occurred.");
+    }
+    } finally {
+        controller.abort();
+    }
   };
 
   return (

@@ -1,10 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
 const ChangePassword = () => {
   const { data: session } = useSession();
+  const router = useRouter();
+  console.log("Session Data:", session);
   const userId = session?.user?.id;
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -18,6 +21,7 @@ const ChangePassword = () => {
     confirm: false,
   });
 
+  // Password Validation
   const validatePassword = (password: string) => {
     return password.length >= 8 && /\d/.test(password) && /[!@#$%^&*(),.?":{}|<>]/.test(password);
   };
@@ -42,12 +46,14 @@ const ChangePassword = () => {
     setShowPassword((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
+  // Handle Password Update
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrors({ current: "", new: "", confirm: "" });
 
     if (!userId) {
+      console.log("Session data:", session);
       alert("User not authenticated");
       setLoading(false);
       return;
@@ -78,6 +84,7 @@ const ChangePassword = () => {
       const response = await fetch(`/api/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
@@ -86,13 +93,16 @@ const ChangePassword = () => {
         throw new Error(data.error || "Failed to update password");
       }
 
-      alert("Password updated successfully!");
+      alert("Password updated successfully! Please log in with your new password.");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+
+      // Redirect to login page
+      router.push("/auth/login");
     } catch (error: any) {
       console.error("Error updating password:", error);
-      alert(error.message || "Error updating password");
+      setErrors((prev) => ({ ...prev, current: error.message || "Error updating password" }));
     } finally {
       setLoading(false);
     }

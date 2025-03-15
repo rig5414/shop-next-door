@@ -7,10 +7,10 @@ import { headers } from "next/headers";
 
 // GET: Fetch a single user by ID
 export async function GET(req: Request, context: { params: { id: string } }) {
-  const { params } = context;
+  const { id } = context.params;
   try {
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true, name: true, email: true, role: true, createdAt: true }
     });
 
@@ -18,7 +18,7 @@ export async function GET(req: Request, context: { params: { id: string } }) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(user, {headers: { "Cache-Control": "no-store"}});
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch user", details: error }, { status: 500 });
   }
@@ -26,7 +26,7 @@ export async function GET(req: Request, context: { params: { id: string } }) {
 
 // PUT: Update user details
 export async function PUT(req: Request, context: { params: { id: string } }) {
-  const { id } = context.params;
+  const { id } = await context.params;
   try {
     const { name, email } = await req.json();
 
@@ -43,19 +43,32 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
 }
 
 // PATCH: Change user password
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, context: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
-    const userId = params.id;
+    const userId = context.params.id;
     const { currentPassword, newPassword } = await req.json();
 
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Ensure the user can only change their own password (unless admin)
-    if (session.user.id !== userId && session.user.role !== "admin") {
+    // Ensure users can only change their own password unless admin
+    if (session.user.id !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Validate passwords
+    if (!currentPassword || !newPassword) {
+      return NextResponse.json({ error: "Both current and new passwords are required" }, { status: 400 });
+    }
+
+    // Check password strength
+    if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      return NextResponse.json(
+        { error: "Password must be at least 8 characters and include a number & special symbol." },
+        { status: 400 }
+      );
     }
 
     // Fetch user
@@ -68,13 +81,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // If admin, skip password check
-    if (session.user.role !== "admin") {
+    // Check current password before updating
       const passwordMatch = await bcrypt.compare(currentPassword, user.password);
       if (!passwordMatch) {
         return NextResponse.json({ error: "Incorrect current password" }, { status: 401 });
       }
-    }
 
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -87,7 +98,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     return NextResponse.json({ message: "Password updated successfully" });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update password", details: error }, { status: 500 });
+    console.error("Error updating password:", error);
+    return NextResponse.json({ error: "Failed to update password" }, { status: 500 });
   }
 }
 

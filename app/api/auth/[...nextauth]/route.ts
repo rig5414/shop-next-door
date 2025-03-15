@@ -56,10 +56,11 @@ const authOptions: AuthOptions = {
     signIn: "/login",
   },
   session: { strategy: "jwt" },
+  jwt: {},
   secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);
 
 // ✅ Export only once
-export { handler as GET, handler as POST, authOptions };
+export { handler as GET, handler as POST, handler as PATCH, authOptions };
