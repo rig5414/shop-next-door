@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 
 // GET: Fetch a single product catalog by ID
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
     try {
         if (!params.id) {
             return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
@@ -23,13 +26,16 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 // PUT: Update a product catalog by ID
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
     try {
         if (!params.id) {
             return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
         }
 
-        const body = await req.json();
+        const body = await request.json();
         const { name, description, defaultPrice, image, category } = body;
 
         if (!name && !description && defaultPrice == null && image === undefined && !category) {
@@ -59,7 +65,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 }
 
 // DELETE: Delete a product catalog by ID
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
     try {
         if (!params.id) {
             return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
