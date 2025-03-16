@@ -24,42 +24,39 @@ model Shop {
   id          String     @id @default(uuid())
   name        String
   description String
-  type        ShopType
   status      ShopStatus
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   vendorId    String
+  type        ShopType
   orders      Order[]
   products    Product[]
   vendor      User       @relation(fields: [vendorId], references: [id])
 }
 
 model ProductCatalog {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?
+  id           String    @id @default(uuid())
+  name         String    @unique
+  description  String?
   defaultPrice Decimal
-  image       String   // Store only the filename (e.g., "soda.jpg")
-  category    String   // E.g., "Grocery" or "Local Shop"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  products    Product[]
+  image        String
+  category     String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  products     Product[]
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  shopId      String
-  catalogId   String
-  price       Decimal
-  stock       Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  shop        Shop           @relation(fields: [shopId], references: [id])
-  catalog     ProductCatalog @relation(fields: [catalogId], references: [id])
-
-  orderItems  OrderItem[]
+  id         String         @id @default(uuid())
+  price      Decimal
+  stock      Int
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  shopId     String
+  catalogId  String
+  orderItems OrderItem[]
+  catalog    ProductCatalog @relation(fields: [catalogId], references: [id])
+  shop       Shop           @relation(fields: [shopId], references: [id])
 }
 
 model Order {
@@ -87,17 +84,17 @@ model OrderItem {
 }
 
 model Transaction {
-  id         String            @id @default(uuid())
-  orderId    String            @unique
-  customerId String
-  amount     Decimal
-  method     PaymentMethod     @default(cod)
+  id          String            @id @default(uuid())
+  orderId     String            @unique
+  customerId  String
+  amount      Decimal
+  status      TransactionStatus
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  method      PaymentMethod     @default(cod)
   phoneNumber String?
-  status     TransactionStatus
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  customer   User              @relation(fields: [customerId], references: [id])
-  order      Order             @relation(fields: [orderId], references: [id])
+  customer    User              @relation(fields: [customerId], references: [id])
+  order       Order             @relation(fields: [orderId], references: [id])
 }
 
 enum Role {
