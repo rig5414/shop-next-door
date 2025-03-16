@@ -2,45 +2,44 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 
 // Define the params interface explicitly
-interface ProductCatalogParams {
-  params: {
-    id: string;
+type Props = {
+    params: {
+      id: string;
+    };
   };
-}
-
 // GET: Fetch a single product catalog by ID
 export async function GET(
-  request: NextRequest,
-  context: ProductCatalogParams
-) {
-    try {
-        const { id } = context.params;
-        
-        if (!id) {
-            return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
-        }
-
-        const productCatalog = await prisma.productCatalog.findUniqueOrThrow({
-            where: { id },
-        });
-
-        return NextResponse.json({
-            ...productCatalog,
-            image: productCatalog.image ? `${productCatalog.image}` : "/placeholder-product.jpg"
-        });
-    } catch (error) {
-        console.error("GET /api/product-catalog/:id error:", error instanceof Error ? error.message : error);
-        return NextResponse.json({ error: "Product catalog not found" }, { status: 404 });
-    }
-}
+    request: NextRequest,
+    { params }: Props
+  ) {
+      try {
+          const { id } = params;
+          
+          if (!id) {
+              return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
+          }
+  
+          const productCatalog = await prisma.productCatalog.findUniqueOrThrow({
+              where: { id },
+          });
+  
+          return NextResponse.json({
+              ...productCatalog,
+              image: productCatalog.image ? `${productCatalog.image}` : "/placeholder-product.jpg"
+          });
+      } catch (error) {
+          console.error("GET /api/product-catalog/:id error:", error instanceof Error ? error.message : error);
+          return NextResponse.json({ error: "Product catalog not found" }, { status: 404 });
+      }
+  }
 
 // PUT: Update a product catalog by ID
 export async function PUT(
   request: NextRequest,
-  context: ProductCatalogParams
+  { params }: Props
 ) {
     try {
-        const { id } = context.params;
+        const { id } = params;
         
         if (!id) {
             return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
@@ -78,10 +77,10 @@ export async function PUT(
 // DELETE: Delete a product catalog by ID
 export async function DELETE(
   request: NextRequest,
-  context: ProductCatalogParams
+  { params }: Props
 ) {
     try {
-        const { id } = context.params;
+        const { id } = params;
         
         if (!id) {
             return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
