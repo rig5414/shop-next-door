@@ -1,12 +1,11 @@
-import NextAuth, { AuthOptions } from "next-auth";
+import NextAuth, { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-// ✅ Ensure authOptions is declared only once
-const authOptions: AuthOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -62,5 +61,5 @@ const authOptions: AuthOptions = {
 
 const handler = NextAuth(authOptions);
 
-// ✅ Export only once
-export { handler as GET, handler as POST, handler as PATCH, authOptions };
+// ✅ Only export route handlers
+export { handler as GET, handler as POST };
