@@ -1,18 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 
+// Define the params interface explicitly
+interface ProductCatalogParams {
+  params: {
+    id: string;
+  };
+}
+
 // GET: Fetch a single product catalog by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: ProductCatalogParams
 ) {
     try {
-        if (!params.id) {
+        const { id } = context.params;
+        
+        if (!id) {
             return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
         }
 
         const productCatalog = await prisma.productCatalog.findUniqueOrThrow({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({
@@ -28,10 +37,12 @@ export async function GET(
 // PUT: Update a product catalog by ID
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: ProductCatalogParams
 ) {
     try {
-        if (!params.id) {
+        const { id } = context.params;
+        
+        if (!id) {
             return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
         }
 
@@ -50,7 +61,7 @@ export async function PUT(
         if (category) updateData.category = category;
 
         const updatedProductCatalog = await prisma.productCatalog.update({
-            where: { id: params.id },
+            where: { id },
             data: updateData,
         });
 
@@ -67,15 +78,17 @@ export async function PUT(
 // DELETE: Delete a product catalog by ID
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: ProductCatalogParams
 ) {
     try {
-        if (!params.id) {
+        const { id } = context.params;
+        
+        if (!id) {
             return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
         }
 
         await prisma.productCatalog.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({ message: "Product catalog deleted successfully" });
