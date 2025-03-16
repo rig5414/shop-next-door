@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
@@ -17,14 +18,14 @@ export default function Navbar() {
         {user ? (
           <>
             <span className="mr-4">{user.name}</span>
-            <a href="/api/auth/logout" className="bg-red-500 px-4 py-2 rounded">
+            <Link href="/api/auth/logout" className="bg-red-500 px-4 py-2 rounded">
               Logout
-            </a>
+            </Link>
           </>
         ) : (
-          <a href="/api/auth/login" className="bg-blue-500 px-4 py-2 rounded">
+          <Link href="/api/auth/login" className="bg-blue-500 px-4 py-2 rounded">
             Login
-          </a>
+          </Link>
         )}
       </div>
     </nav>

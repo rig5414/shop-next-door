@@ -7,6 +7,7 @@ import { IconType } from "react-icons";
 import { motion } from "framer-motion";
 import SidebarItem from "./SidebarItem";
 import LogoutModal from "../auth/LogOutModal";
+import Link from "next/link";
 
 interface SidebarProps {
   isCollapsed: boolean;
