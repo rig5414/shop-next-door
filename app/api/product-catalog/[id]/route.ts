@@ -1,15 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "../../../../lib/prisma"
 
-interface RouteParams {
-  params: {
-    id: string
-  }
-}
-
 // GET: Fetch a single product catalog by ID
-export async function GET(request: NextRequest, params: RouteParams) {
-  const id = params.params.id
+export async function GET(request: NextRequest, { params }: { params: Record<string, string> }) {
+  const id = params.id
 
   if (!id) {
     return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 })
@@ -31,9 +25,9 @@ export async function GET(request: NextRequest, params: RouteParams) {
 }
 
 // PUT: Update a product catalog by ID
-export async function PUT(request: NextRequest, params: RouteParams) {
+export async function PUT(request: NextRequest, { params }: { params: Record<string, string> }) {
   try {
-    const id = params.params.id
+    const id = params.id
 
     if (!id) {
       return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 })
@@ -69,9 +63,9 @@ export async function PUT(request: NextRequest, params: RouteParams) {
 }
 
 // DELETE: Delete a product catalog by ID
-export async function DELETE(request: NextRequest, params: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: { params: Record<string, string> }) {
   try {
-    const id = params.params.id
+    const id = params.id
 
     if (!id) {
       return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 })
