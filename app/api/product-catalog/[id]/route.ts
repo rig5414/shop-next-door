@@ -59,7 +59,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         );
     }
 }
-
+//changes
 // DELETE: Delete a product catalog by ID
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
     try {
