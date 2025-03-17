@@ -16,6 +16,7 @@
     "@faker-js/faker": "^9.5.0",
     "@headlessui/react": "^2.2.0",
     "@heroui/react": "^2.7.2",
+    "@netlify/plugin-nextjs": "^5.10.0",
     "@prisma/client": "^6.5.0",
     "axios": "^1.8.2",
     "bcrypt": "^5.1.1",
