@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://shop-next-door.onrender.com
+
+# Sitemaps
+Sitemap: https://shop-next-door.onrender.com/sitemap.xml
