@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Shop Next Door",
   description: "An innovative online shopping experience",
+  keywords: ["shop next door"],
   other: {
     "google-site-verification": "Ciuj-LKsiEniGCwNm-CZDNvk_PmZsHsGaH8oUFkDxPY"
   }
