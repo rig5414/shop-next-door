@@ -4,22 +4,23 @@ import { prisma } from "../../../../lib/prisma";
 // GET: Fetch a single product catalog by ID
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } } 
+    context: { params: { id: string } } // Original type
 ) {
+    const { params } = context as { params: { id: string } }; // Type assertion here
+    const { id } = params;
+
+    if (!id) {
+        return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
+    }
+
     try {
-        const { id } = params;
-
-        if (!id) {
-            return NextResponse.json({ error: "Product catalog ID is required" }, { status: 400 });
-        }
-
         const productCatalog = await prisma.productCatalog.findUniqueOrThrow({
             where: { id },
         });
 
         return NextResponse.json({
             ...productCatalog,
-            image: productCatalog.image ? `${productCatalog.image}` : "/placeholder-product.jpg"
+            image: productCatalog.image ? `${productCatalog.image}` : "/placeholder-product.jpg",
         });
     } catch (error) {
         console.error("GET /api/product-catalog/:id error:", error instanceof Error ? error.message : error);
@@ -27,12 +28,14 @@ export async function GET(
     }
 }
 
+
 // PUT: Update a product catalog by ID
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } } // ✅ Correct type
+    context: { params: { id: string } } // Original type
 ) {
     try {
+        const { params } = context as { params: { id: string } }; // Type assertion here
         const { id } = params;
 
         if (!id) {
@@ -46,7 +49,7 @@ export async function PUT(
             return NextResponse.json({ error: "At least one field must be provided to update" }, { status: 400 });
         }
 
-        const updateData: any = {};
+        const updateData: Record<string, unknown> = {}; // More explicit type
         if (name) updateData.name = name;
         if (description) updateData.description = description;
         if (defaultPrice != null) updateData.defaultPrice = defaultPrice;
@@ -68,12 +71,14 @@ export async function PUT(
     }
 }
 
+
 // DELETE: Delete a product catalog by ID
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } } // ✅ Correct type
+    context: { params: { id: string } } // Original type
 ) {
     try {
+        const { params } = context as { params: { id: string } }; // Type assertion here
         const { id } = params;
 
         if (!id) {
