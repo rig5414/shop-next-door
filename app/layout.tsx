@@ -3,6 +3,7 @@ import "./globals.css";
 import { ProfileProvider } from "../components/profile/ProfileContext";
 import { ReactNode } from "react";
 import SessionProviderWrapper from "../components/auth/SessionProviderWrapper";
+import { Metadata } from "next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,6 +18,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Shop Next Door",
   description: "An innovative online shopping experience",
+  other: {
+    "google-site-verification": "Ciuj-LKsiEniGCwNm-CZDNvk_PmZsHsGaH8oUFkDxPY"
+  }
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
