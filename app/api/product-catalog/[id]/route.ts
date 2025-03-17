@@ -1,14 +1,12 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { prisma } from "../../../../lib/prisma"
 
-// Define the correct type for Next.js 15.2.2 route handlers
-type RouteParams = {
-  params: { id: string }
-}
-
 // GET: Fetch a single product catalog by ID
-export async function GET(request: NextRequest, context: RouteParams) {
-  const { id } = context.params
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  const { id } = params
 
   try {
     const productCatalog = await prisma.productCatalog.findUnique({
@@ -30,11 +28,14 @@ export async function GET(request: NextRequest, context: RouteParams) {
 }
 
 // PUT: Update a product catalog by ID
-export async function PUT(request: NextRequest, context: RouteParams) {
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = context.params
+    const { id } = params
 
-    const body = await request.json()
+    const body = await req.json()
     const { name, description, defaultPrice, image, category } = body
 
     if (!name && !description && defaultPrice == null && image === undefined && !category) {
@@ -64,9 +65,12 @@ export async function PUT(request: NextRequest, context: RouteParams) {
 }
 
 // DELETE: Delete a product catalog by ID
-export async function DELETE(request: NextRequest, context: RouteParams) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = context.params
+    const { id } = params
 
     const existingProductCatalog = await prisma.productCatalog.findUnique({ where: { id } })
 
@@ -84,4 +88,3 @@ export async function DELETE(request: NextRequest, context: RouteParams) {
     return NextResponse.json({ error: "Failed to delete product catalog" }, { status: 500 })
   }
 }
-
