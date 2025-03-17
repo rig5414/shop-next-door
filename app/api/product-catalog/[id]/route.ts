@@ -1,82 +1,87 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "../../../../lib/prisma";
+import { type NextRequest, NextResponse } from "next/server"
+import { prisma } from "../../../../lib/prisma"
+
+// Define the correct type for Next.js 15.2.2 route handlers
+type RouteParams = {
+  params: { id: string }
+}
 
 // GET: Fetch a single product catalog by ID
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-    try {
-        const productCatalog = await prisma.productCatalog.findUnique({
-            where: { id: params.id },
-        });
+export async function GET(request: NextRequest, context: RouteParams) {
+  const { id } = context.params
 
-        if (!productCatalog) {
-            return NextResponse.json({ error: "Product catalog not found" }, { status: 404 });
-        }
+  try {
+    const productCatalog = await prisma.productCatalog.findUnique({
+      where: { id },
+    })
 
-        return NextResponse.json({
-            ...productCatalog,
-            image: productCatalog.image ? `${productCatalog.image}` : "/placeholder-product.jpg",
-        });
-    } catch (error) {
-        console.error("GET /api/product-catalog/:id error:", error);
-        return NextResponse.json(
-            { error: "Failed to fetch product catalog", details: error instanceof Error ? error.message : String(error) },
-            { status: 500 }
-        );
+    if (!productCatalog) {
+      return NextResponse.json({ error: "Product catalog not found" }, { status: 404 })
     }
+
+    return NextResponse.json({
+      ...productCatalog,
+      image: productCatalog.image ? `${productCatalog.image}` : "/placeholder-product.jpg",
+    })
+  } catch (error) {
+    console.error("GET /api/product-catalog/:id error:", error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: "Product catalog not found" }, { status: 404 })
+  }
 }
 
 // PUT: Update a product catalog by ID
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-    try {
-        const body = await req.json();
-        const { name, description, defaultPrice, image, category } = body;
+export async function PUT(request: NextRequest, context: RouteParams) {
+  try {
+    const { id } = context.params
 
-        if (!name && !description && defaultPrice == null && image === undefined && !category) {
-            return NextResponse.json({ error: "At least one field must be provided to update" }, { status: 400 });
-        }
+    const body = await request.json()
+    const { name, description, defaultPrice, image, category } = body
 
-        const updateData: Record<string, unknown> = {};
-        if (name) updateData.name = name;
-        if (description) updateData.description = description;
-        if (defaultPrice != null) updateData.defaultPrice = defaultPrice;
-        if (image) updateData.image = image.substring(image.lastIndexOf('/') + 1);
-        if (category) updateData.category = category;
-
-        const updatedProductCatalog = await prisma.productCatalog.update({
-            where: { id: params.id },
-            data: updateData,
-        });
-
-        return NextResponse.json({
-            ...updatedProductCatalog,
-            image: `/images/${updatedProductCatalog.image}`
-        });
-    } catch (error) {
-        console.error("PUT /api/product-catalog/:id error:", error);
-        return NextResponse.json(
-            { error: "Failed to update product catalog", details: error instanceof Error ? error.message : String(error) },
-            { status: 500 }
-        );
+    if (!name && !description && defaultPrice == null && image === undefined && !category) {
+      return NextResponse.json({ error: "At least one field must be provided to update" }, { status: 400 })
     }
+
+    const updateData: Record<string, unknown> = {}
+    if (name) updateData.name = name
+    if (description) updateData.description = description
+    if (defaultPrice != null) updateData.defaultPrice = defaultPrice
+    if (image) updateData.image = image.substring(image.lastIndexOf("/") + 1)
+    if (category) updateData.category = category
+
+    const updatedProductCatalog = await prisma.productCatalog.update({
+      where: { id },
+      data: updateData,
+    })
+
+    return NextResponse.json({
+      ...updatedProductCatalog,
+      image: `/images/${updatedProductCatalog.image}`,
+    })
+  } catch (error) {
+    console.error("PUT /api/product-catalog/:id error:", error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: "Failed to update product catalog" }, { status: 500 })
+  }
 }
-//changes
+
 // DELETE: Delete a product catalog by ID
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-    try {
-        const existingProductCatalog = await prisma.productCatalog.findUnique({ where: { id: params.id } });
+export async function DELETE(request: NextRequest, context: RouteParams) {
+  try {
+    const { id } = context.params
 
-        if (!existingProductCatalog) {
-            return NextResponse.json({ error: "Product catalog not found" }, { status: 404 });
-        }
+    const existingProductCatalog = await prisma.productCatalog.findUnique({ where: { id } })
 
-        await prisma.productCatalog.delete({ where: { id: params.id } });
-
-        return NextResponse.json({ message: "Product catalog deleted successfully" });
-    } catch (error) {
-        console.error("DELETE /api/product-catalog/:id error:", error);
-        return NextResponse.json(
-            { error: "Failed to delete product catalog", details: error instanceof Error ? error.message : String(error) },
-            { status: 500 }
-        );
+    if (!existingProductCatalog) {
+      return NextResponse.json({ error: "Product catalog not found" }, { status: 404 })
     }
+
+    await prisma.productCatalog.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({ message: "Product catalog deleted successfully" })
+  } catch (error) {
+    console.error("DELETE /api/product-catalog/:id error:", error instanceof Error ? error.message : error)
+    return NextResponse.json({ error: "Failed to delete product catalog" }, { status: 500 })
+  }
 }
+
