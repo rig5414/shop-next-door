@@ -5,6 +5,7 @@ import { prisma } from "../../../../lib/prisma";
 export async function GET(req: Request, { params }: { params: { id: string } }) {
     try {
         const { id } = await params;
+        console.log("idreceived: ",id);
         if (!id) {
             return NextResponse.json({ error: "Shop ID is required"}, { status: 400 });
         }

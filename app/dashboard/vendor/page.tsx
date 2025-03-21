@@ -25,7 +25,35 @@ const VendorDashboard = () => {
   const [products, setProducts] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [shopId, setShopId] = useState("");
+  const [loading, setLoading] = useState(false);
 
+  console.log("Vendor ID:", vendorId);
+  console.log("Shop ID:", shopId);
+
+  // Fetch Shop ID first
+  useEffect(() => {
+    if (vendorId) {
+      fetchShop();
+    }
+  }, [vendorId]);
+
+  const fetchShop = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/shops?vendorId=${vendorId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to fetch shop data");
+      console.log('data for the shop: ',data)
+      setShopId(data[0].id);
+    } catch (error) {
+      console.error("Error fetching shop:", error);
+    }finally{
+      setLoading(false);
+    }
+  };
+
+  // Fetch Orders once vendorId is available
   useEffect(() => {
     if (!vendorId) return;
 
@@ -39,19 +67,28 @@ const VendorDashboard = () => {
       }
     };
 
+    fetchOrders();
+  }, [vendorId]);
+
+  // Fetch Products ONLY after shopId is available
+  useEffect(() => {
+    if (!shopId) return;
+
     const fetchProducts = async () => {
+      setLoading(true);
       try {
-        const res = await fetch(`/api/products?vendorId=${vendorId}`);
+        const res = await fetch(`/api/products?shopId=${shopId}`);
         const data = await res.json();
         setProducts(data);
       } catch (error) {
         console.error("Error fetching products:", error);
+      }finally{
+        setLoading(false);
       }
     };
 
-    fetchOrders();
     fetchProducts();
-  }, [vendorId]);
+  }, [shopId]); // ✅ Runs ONLY when `shopId` is available
 
   const toggleShopStatus = async () => {
     try {
@@ -70,7 +107,7 @@ const VendorDashboard = () => {
   return (
     <DashboardLayout role="vendor">
       <DashboardHeader
-        title={`Welcome, ${profile.firstName} ${profile.lastName}!`} // ✅ Fixes vendor name issue
+        title={`Welcome, ${profile.firstName} ${profile.lastName}!`} 
         subtitle="Manage your products and track sales."
       />
 
@@ -105,7 +142,8 @@ const VendorDashboard = () => {
 
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Your Products</h2>
-        {products.length > 0 ? <ProductList products={products} /> : <p className="text-gray-400">No products available.</p>}
+        {loading ?<>Loading..</> : <> {products.length > 0 && <ProductList products={products} /> }</>}
+       
       </section>
 
       <section className="mt-6">

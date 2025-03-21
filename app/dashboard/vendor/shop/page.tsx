@@ -32,6 +32,7 @@ const VendorShopPage = () => {
       try {
         const res = await fetch(`/api/shops?vendorId=${session.user.id}`);
         const data = await res.json();
+        console.log('shopOfVendor: ',data);
         if (!res.ok) throw new Error(data.error || "Failed to fetch shop data");
 
         setShop(Array.isArray(data) ? data[0] : data);
