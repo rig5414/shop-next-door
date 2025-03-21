@@ -7,12 +7,11 @@ import RevenueChart from "../../../../components/dashboard/charts/RevenueChart";
 import OrdersChart from "../../../../components/dashboard/charts/OrdersChart";
 import CustomerFrequencyChart from "../../../../components/dashboard/charts/CustomerFrequencyChart";
 import InsightsDetails from "../../../../components/dashboard/insights/InsightDetails";
-
 import OrdersList from "../../../../components/dashboard/insights/OrdersList";
 import RepeatCustomers from "../../../../components/dashboard/insights/RepeatCustomer";
 import RevenueBreakdown from "../../../../components/dashboard/insights/RevenueBreakdown";
 import SalesDayCard from "../../../../components/dashboard/insights/SalesDayCard";
-
+import ErrorBoundary from "../../../../components/auth/ErrorBoundary";
 import { fetchInsights } from "../../../../lib/fetchInsights";
 import { useEffect, useState } from "react";
 
@@ -94,7 +93,9 @@ const Insights = () => {
             >
               <h3 className="text-lg font-semibold mb-2">{title}</h3>
               <div className="flex-grow">
-                <Component />
+                <ErrorBoundary>
+                  <Component />
+                </ErrorBoundary>
               </div>
             </div>
           ))}

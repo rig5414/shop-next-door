@@ -170,20 +170,20 @@ const VendorDashboard = () => {
         <h2 className="text-xl font-semibold text-white">Sales Insights</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
         <ErrorBoundary>
-      <SalesChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-    </ErrorBoundary>
-    <ErrorBoundary>
-      <BestSellingChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-    </ErrorBoundary>
-    <ErrorBoundary>
-      <RevenueChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-    </ErrorBoundary>
-    <ErrorBoundary>
-      <OrdersChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-    </ErrorBoundary>
-    <ErrorBoundary>
-      <CustomerFrequencyChart className="w-full h-full md:col-span-2 transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-    </ErrorBoundary>
+         <SalesChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+        </ErrorBoundary>
+        <ErrorBoundary>
+         <BestSellingChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+        </ErrorBoundary>
+        <ErrorBoundary>
+         <RevenueChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+        </ErrorBoundary>
+        <ErrorBoundary>
+         <OrdersChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+        </ErrorBoundary>
+        <ErrorBoundary>
+         <CustomerFrequencyChart className="w-full h-full md:col-span-2 transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+        </ErrorBoundary>
         </div>
       </section>
 
