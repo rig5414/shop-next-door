@@ -52,7 +52,7 @@ const VendorDashboard = () => {
     if (vendorId) {
       fetchShop();
     }
-  }, [vendorId]); // ✅ Now fetchShop is inside the useEffect, so no dependency warning
+  }, [vendorId]);
 
   // Fetch Orders once vendorId is available
   useEffect(() => {
@@ -89,7 +89,7 @@ const VendorDashboard = () => {
     };
 
     fetchProducts();
-  }, [shopId]); // ✅ Runs ONLY when `shopId` is available
+  }, [shopId]);
 
   // Updated debugging code with TypeScript fixes
   useEffect(() => {
