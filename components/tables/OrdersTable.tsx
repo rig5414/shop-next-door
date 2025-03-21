@@ -16,7 +16,7 @@ const TABLE_HEADERS: { key: keyof Order; label: string }[] = [
   { key: "shop", label: "Shop" },
   { key: "total", label: "Total ($)" },
   { key: "paymentStatus", label: "Payment Status" },
-  { key: "orderStatus", label: "Order Status" },
+  { key: "status", label: "Order Status" },
 ];
 
 const getStatusColor = (status: string) => {
@@ -28,6 +28,7 @@ const getStatusColor = (status: string) => {
 };
 
 const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onSelectOrder, onDeleteOrder }) => {
+
   const [sortBy, setSortBy] = useState<keyof Order>("id");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -80,15 +81,15 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onSelectOrder, onDele
                 <td className="border border-gray-700 px-4 py-2 text-blue-400 cursor-pointer">
                   #{order.id}
                 </td>
-                <td className="border border-gray-700 px-4 py-2">{order.customer}</td>
-                <td className="border border-gray-700 px-4 py-2">{order.shop}</td>
-                <td className="border border-gray-700 px-4 py-2">${order.total.toFixed(2)}</td>
+                <td className="border border-gray-700 px-4 py-2">{order?.customer.name}</td>
+                <td className="border border-gray-700 px-4 py-2">{order?.shop?.name}</td>
+                <td className="border border-gray-700 px-4 py-2">${order?.total}</td>
                 <td className="border border-gray-700 px-4 py-2">
                   <span className={`px-2 py-1 rounded text-sm ${getStatusColor(order.paymentStatus)}`}>
                     {order.paymentStatus}
                   </span>
                 </td>
-                <td className="border border-gray-700 px-4 py-2">{order.orderStatus}</td>
+                <td className="border border-gray-700 px-4 py-2">{order.status}</td>
                 <td className="border border-gray-700 px-4 py-2 flex gap-3">
                   {/* View Order */}
                   <button
