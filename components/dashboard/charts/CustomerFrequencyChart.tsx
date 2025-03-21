@@ -17,8 +17,8 @@ export default function CustomerFrequencyChart({ className = "" }) {
                 const insights = await fetchInsights();
                 console.log("Insights:", insights); // Log the insights object
 
-                if (insights && insights.customerFrequency) {
-                    setData(insights.customerFrequency);
+                if (insights && insights?.customerFrequency) {
+                    setData(insights?.customerFrequency);
                     console.log("Customer Frequency Data:", insights.customerFrequency); // Log the data
                 } else {
                     console.error("No customerFrequency data found in insights");
@@ -31,7 +31,7 @@ export default function CustomerFrequencyChart({ className = "" }) {
         fetchData();
     }, []);
 
-    if (data.length > 0) {
+    if (data?.length > 0) {
         console.log("Data State:", data); // Log the data state
     }
 
@@ -42,9 +42,9 @@ export default function CustomerFrequencyChart({ className = "" }) {
         >
             <h2 className="text-white text-xl font-semibold mb-3">Customer Purchase Frequency</h2>
 
-            {data.length > 0 ? (
+            {data?.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={data}>
+                    <BarChart data={data?data:[]}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="day" stroke="#ffffff" />
                         <YAxis stroke="#ffffff" />

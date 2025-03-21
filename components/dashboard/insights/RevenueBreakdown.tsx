@@ -16,7 +16,7 @@ const RevenueBreakdown: React.FC<RevenueBreakdownProps> = ({ data }) => {
         {Object.entries(data).map(([category, amount], index) => (
           <li key={index} className="border-b border-gray-700 pb-2">
             <span className="font-semibold">
-              {category.charAt(0).toUpperCase() + category.slice(1)}
+              {category?.charAt(0)?.toUpperCase() + category?.slice(1)}
             </span>
             : KES {amount.toLocaleString()} {/* Format with commas */}
           </li>

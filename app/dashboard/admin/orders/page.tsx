@@ -94,9 +94,9 @@ const OrdersPage = () => {
       if (response.ok) {
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
-            order.id === orderId ? { ...order, paymentStatus: "Refunded" } : order
+            order.id === orderId ? { ...order, TransactionStatus: "Refunded" } : order
           )
-        );
+        )
         console.log(`Order ${orderId} refunded`);
       } else {
         throw new Error("Failed to refund order");
