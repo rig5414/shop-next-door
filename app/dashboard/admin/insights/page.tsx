@@ -27,6 +27,44 @@ const Insights = () => {
     fetchData();
   }, []);
 
+  // Updated debugging code with TypeScript fixes
+  useEffect(() => {
+   console.log('Debugging Chart.js controller error...');
+
+    if (typeof window !== 'undefined') {
+      // Use type assertion to tell TypeScript that Chart might exist on window
+      const windowWithChart = window as any;
+
+      // Check if Chart.js is available
+      console.log('Chart.js available:', typeof windowWithChart.Chart !== 'undefined');
+
+      // If Chart.js is available, check registered controllers
+      if (windowWithChart.Chart) {
+          console.log('Chart.js version:', windowWithChart.Chart.version);
+
+          // Check if the registry exists
+          if (windowWithChart.Chart.registry) {
+              console.log('Chart.js registry exists');
+
+              // Check if controllers exist in the registry
+              if (windowWithChart.Chart.registry.controllers) {
+                  const controllers = Object.keys(windowWithChart.Chart.registry.controllers);
+                  console.log('Registered controllers:', controllers);
+                  console.log('Bar controller registered:', controllers.includes('bar'));
+              } else {
+                  console.log('No controllers in registry');
+              }
+          } else {
+              console.log('No registry in Chart.js');
+          }
+        } else {
+          console.log('Chart.js not available on window');
+        }
+      } else {
+      console.log('window is undefined');
+      }
+    }, []);
+
   if (!insightsData) {
     return <p className="text-white text-center">Loading insights...</p>;
   }
