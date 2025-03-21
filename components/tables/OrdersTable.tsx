@@ -83,7 +83,9 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onSelectOrder, onDele
                 </td>
                 <td className="border border-gray-700 px-4 py-2">{order?.customer.name}</td>
                 <td className="border border-gray-700 px-4 py-2">{order?.shop?.name}</td>
-                <td className="border border-gray-700 px-4 py-2">${order?.total}</td>
+                <td className="border border-gray-700 px-4 py-2">
+  KSh {Number(order?.total).toFixed(2)}
+</td>
                 <td className="border border-gray-700 px-4 py-2">
                   <span className={`px-2 py-1 rounded text-sm ${getStatusColor(order.paymentStatus)}`}>
                     {order.paymentStatus}
