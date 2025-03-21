@@ -17,7 +17,7 @@ import { useProfile } from "../../../components/profile/ProfileContext";
 
 const VendorDashboard = () => {
   const { data: session } = useSession();
-  const { profile } = useProfile(); 
+  const { profile } = useProfile();
   const vendorId = session?.user?.id;
 
   const [shopOpen, setShopOpen] = useState(true);
@@ -33,25 +33,25 @@ const VendorDashboard = () => {
 
   // Fetch Shop ID first
   useEffect(() => {
+    const fetchShop = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/shops?vendorId=${vendorId}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to fetch shop data");
+        console.log('data for the shop: ', data);
+        setShopId(data[0].id);
+      } catch (error) {
+        console.error("Error fetching shop:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (vendorId) {
       fetchShop();
     }
-  }, [vendorId]);
-
-  const fetchShop = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/shops?vendorId=${vendorId}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to fetch shop data");
-      console.log('data for the shop: ',data)
-      setShopId(data[0].id);
-    } catch (error) {
-      console.error("Error fetching shop:", error);
-    }finally{
-      setLoading(false);
-    }
-  };
+  }, [vendorId]); // ✅ Now fetchShop is inside the useEffect, so no dependency warning
 
   // Fetch Orders once vendorId is available
   useEffect(() => {
@@ -82,7 +82,7 @@ const VendorDashboard = () => {
         setProducts(data);
       } catch (error) {
         console.error("Error fetching products:", error);
-      }finally{
+      } finally {
         setLoading(false);
       }
     };
@@ -107,7 +107,7 @@ const VendorDashboard = () => {
   return (
     <DashboardLayout role="vendor">
       <DashboardHeader
-        title={`Welcome, ${profile.firstName} ${profile.lastName}!`} 
+        title={`Welcome, ${profile.firstName} ${profile.lastName}!`}
         subtitle="Manage your products and track sales."
       />
 
@@ -142,8 +142,7 @@ const VendorDashboard = () => {
 
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Your Products</h2>
-        {loading ?<>Loading..</> : <> {products.length > 0 && <ProductList products={products} /> }</>}
-       
+        {loading ? <>Loading..</> : <>{products.length > 0 && <ProductList products={products} />}</>}
       </section>
 
       <section className="mt-6">
