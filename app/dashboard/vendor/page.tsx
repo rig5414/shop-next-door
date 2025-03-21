@@ -14,6 +14,7 @@ import OrdersChart from "../../../components/dashboard/charts/OrdersChart";
 import { useSession } from "next-auth/react";
 import { Order } from "../../types";
 import { useProfile } from "../../../components/profile/ProfileContext";
+import ErrorBoundary from "../../../components/auth/ErrorBoundary";
 
 const VendorDashboard = () => {
   const { data: session } = useSession();
@@ -90,6 +91,42 @@ const VendorDashboard = () => {
     fetchProducts();
   }, [shopId]); // ✅ Runs ONLY when `shopId` is available
 
+  // Updated debugging code with TypeScript fixes
+  useEffect(() => {
+   console.log('Debugging Chart.js controller error...');
+  
+    if (typeof window !== 'undefined') {
+    // Use type assertion to tell TypeScript that Chart might exist on window
+    const windowWithChart = window as any;
+    
+    // Check if Chart.js is available
+    console.log('Chart.js available:', typeof windowWithChart.Chart !== 'undefined');
+    
+    // If Chart.js is available, check registered controllers
+    if (windowWithChart.Chart) {
+      console.log('Chart.js version:', windowWithChart.Chart.version);
+      
+      // Check if the registry exists
+      if (windowWithChart.Chart.registry) {
+        console.log('Chart.js registry exists');
+        
+        // Check if controllers exist in the registry
+        if (windowWithChart.Chart.registry.controllers) {
+          const controllers = Object.keys(windowWithChart.Chart.registry.controllers);
+          console.log('Registered controllers:', controllers);
+          console.log('Bar controller registered:', controllers.includes('bar'));
+        } else {
+          console.log('No controllers in registry');
+        }
+      } else {
+        console.log('No registry in Chart.js');
+      }
+    } else {
+      console.log('Chart.js not available on window');
+    }
+   }
+  }, []);
+
   const toggleShopStatus = async () => {
     try {
       const newStatus = shopOpen ? "inactive" : "active";
@@ -132,11 +169,21 @@ const VendorDashboard = () => {
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Sales Insights</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-          <SalesChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-          <BestSellingChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-          <RevenueChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-          <OrdersChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-          <CustomerFrequencyChart className="w-full h-full md:col-span-2 transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+        <ErrorBoundary>
+      <SalesChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+    </ErrorBoundary>
+    <ErrorBoundary>
+      <BestSellingChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+    </ErrorBoundary>
+    <ErrorBoundary>
+      <RevenueChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+    </ErrorBoundary>
+    <ErrorBoundary>
+      <OrdersChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+    </ErrorBoundary>
+    <ErrorBoundary>
+      <CustomerFrequencyChart className="w-full h-full md:col-span-2 transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+    </ErrorBoundary>
         </div>
       </section>
 
