@@ -189,7 +189,8 @@ const VendorDashboard = () => {
 
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Your Products</h2>
-        {loading ? <>Loading..</> : <>{products.length > 0 && <ProductList products={products} />}</>}
+        {loading ? <>Loading..</> : <>{products.length > 0
+         && <ProductList products={products} />}</>}
       </section>
 
       <section className="mt-6">

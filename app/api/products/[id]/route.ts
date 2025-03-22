@@ -10,12 +10,18 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
                 catalog: true, // Include the ProductCatalog details
             },
         });
-
+    
         if (!product) {
             return NextResponse.json({ error: "Product not found" }, { status: 404 });
         }
 
-        return NextResponse.json(product);
+          // Transform the product to include image directly
+          const transformedProduct = {
+            ...product,
+            image: product.catalog?.image,
+        };
+
+        return NextResponse.json(transformedProduct);
     } catch (error: unknown) {
         console.error("GET /api/products/:id error:", error);
         return NextResponse.json(

@@ -16,7 +16,14 @@ export async function GET(req: Request) {
       include: { catalog: true }, // Include ProductCatalog details
     })
 
-    return NextResponse.json(products)
+    // Transform the data to include image directly on the product object
+    const transformedProducts = products.map(product => ({
+      ...product,
+      image: product.catalog?.image, // Add image from catalog to the root level
+      // Include any other fields needed
+    }))
+
+    return NextResponse.json(transformedProducts)
   } catch (error) {
     console.error("GET /api/products error:", error)
     return NextResponse.json(

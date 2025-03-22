@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from "react";
+"use client";
+
+import type React from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import ProductModal from "./ProductModals";
@@ -55,16 +58,12 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
     };
 
     const handleProductUpdate = (updatedProduct: Product) => {
-        setFetchedProducts((prevProducts) =>
-            prevProducts.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
-        );
-    };
+        setFetchedProducts((prevProducts) => prevProducts.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)))
+      }
 
-    const handleProductDelete = (productId: string) => {
-        setFetchedProducts((prevProducts) =>
-            prevProducts.filter((p) => p.id !== productId)
-        );
-    };
+      const handleProductDelete = (productId: string) => {
+        setFetchedProducts((prevProducts) => prevProducts.filter((p) => p.id !== productId))
+      }
 
     const handleSubmit = async (data: any) => {
         if (modalType === "edit") {
@@ -100,22 +99,31 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
                 displayedProducts.map((product) => {
                     const imageSrc = product.image?.trim() ? product.image : "/images/placeholder.jpg";
                     return (
-                        <div key={product.id} className="bg-gray-900 p-4 rounded-lg hover:scale-105 hover:shadow-lg hover:bg-gray-800 transition">
+                        <div
+                        key={product.id}
+                        className="bg-gray-900 p-4 rounded-lg hover:scale-105 hover:shadow-lg hover:bg-gray-800 transition"
+                        >
                             <Image
-                                src={imageSrc}
-                                alt={product.name || "Product Image"}
-                                width={200}
-                                height={128}
-                                className="w-full h-32 object-cover rounded-md"
+                              src={imageSrc || "/placeholder.svg"}
+                              alt={product.name || "Product Image"}
+                              width={200}
+                              height={128}
+                              className="w-full h-32 object-cover rounded-md"
+                              onError={(e) => {
+                                // Fallback to placeholder if image fails to load
+                              e.currentTarget.src = "/images/placeholder.jpg"
+                              }}
                             />
 
                             <h3 className="text-white text-lg font-semibold mt-2">{product.name}</h3>
-                            {!hidePriceAndStock && (
-                                <>
-                                    <p className="text-blue-400 font-bold">Ksh. {product.price !== undefined ? product.price.toLocaleString() : "N/A"}</p>
-                                    <p className="text-gray-300">Stock: {product.stock}</p>
-                                </>
-                            )}
+                              {!hidePriceAndStock && (
+                               <>
+                               <p className="text-blue-400 font-bold">
+                                Ksh. {product.price !== undefined ? product.price.toLocaleString() : "N/A"}
+                               </p>
+                               <p className="text-gray-300">Stock: {product.stock}</p>
+                               </>
+                              )}
 
                             {session?.user?.role === "vendor" ? (
                                 <>

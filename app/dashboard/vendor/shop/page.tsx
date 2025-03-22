@@ -102,7 +102,7 @@ const VendorShopPage = () => {
           <h2 className="text-xl font-semibold text-white">Products</h2>
           <button
             onClick={() => setIsAddOpen(true)}
-            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 mb-2"
           >
             + Add Product
           </button>

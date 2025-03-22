@@ -33,6 +33,7 @@ const CustomerDashboard = () => {
   });
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user) return;
@@ -94,6 +95,7 @@ const CustomerDashboard = () => {
   };
 
   const fetchProducts = async () => {
+    setLoading(true);
     try {
       const res = await fetch("/api/product-catalog");
       const data: Product[] = await res.json();
@@ -110,6 +112,9 @@ const CustomerDashboard = () => {
     } catch (error) {
       console.error("Error fetching products:", error);
       setRecommendedProducts([]);
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -132,13 +137,16 @@ const CustomerDashboard = () => {
 
       {/* Recommended Products */}
       <section className="mt-6">
-        <h2 className="text-xl font-semibold text-white">Recommended for You</h2>
-        {recommendedProducts.length > 0 ? (
-          <ProductList products={recommendedProducts.map(product => ({ ...product, stock: 0}))} hidePriceAndStock />
-        ) : (
-          <p className="text-gray-400">No products available.</p>
-        )}
-      </section>
+                <h2 className="text-xl font-semibold text-white">Recommended for You</h2>
+                {loading ? <p className="text-gray-400">Loading products...</p> : recommendedProducts.length > 0 ? (
+                    <ProductList
+                        products={recommendedProducts.map(product => ({ ...product, stock: 0 }))}
+                        hidePriceAndStock
+                    />
+                ) : (
+                    <p className="text-gray-400">No products available.</p>
+                )}
+            </section>
 
       {/* Open Shops Section */}
       <section className="mt-6 bg-gray-800 p-4 rounded-lg shadow-md">

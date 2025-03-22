@@ -1,55 +1,72 @@
-import { useState, useEffect } from "react";
-import Image from "next/image";
+"use client"
+
+import { useState, useEffect } from "react"
+import Image from "next/image"
 
 interface Product {
-  id: string;
-  name: string;
-  description?: string;
-  price?: number;
-  stock?: number;
-  image?: string;
+  id: string
+  name: string
+  description?: string
+  price?: number
+  stock?: number
+  image?: string
 }
 
 interface ProductModalProps {
-  type: "edit" | "delete" | "add";
-  isOpen: boolean;
-  onClose: () => void;
-  shopType: "local_shop" | "grocery_shop";
-  product?: Product;
-  shopId: string;
-  onSubmit: (data?: any) => void;
+  type: "edit" | "delete" | "add"
+  isOpen: boolean
+  onClose: () => void
+  shopType: "local_shop" | "grocery_shop"
+  product?: Product
+  shopId: string
+  onSubmit: (data?: any) => void
 }
 
-export default function ProductModal({ isOpen, onClose, shopType, shopId, product, type, onSubmit }: ProductModalProps) {
-  const [products, setProducts] = useState<Product[]>([]);
+export default function ProductModal({
+  isOpen,
+  onClose,
+  shopType,
+  shopId,
+  product,
+  type,
+  onSubmit,
+}: ProductModalProps) {
+  const [products, setProducts] = useState<Product[]>([])
   const [selectedProducts, setSelectedProducts] = useState<Map<string, Product>>(new Map())
-  const [loading, setLoading] = useState<boolean>(true);
-  const [productDetails, setProductDetails] = useState<Product | null>(product || null);
+  const [loading, setLoading] = useState<boolean>(true)
+  const [productDetails, setProductDetails] = useState<Product | null>(product || null)
   const [activeProductId, setActiveProductId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState<string>("")
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return
 
     if (type === "edit" && product) {
-      setProductDetails(product);
+      setProductDetails(product)
     }
 
     if (type === "add") {
       const fetchProducts = async () => {
         try {
-          const res = await fetch(`/api/product-catalog?category=${shopType}`);
-          const data = await res.json();
-          if (!res.ok) throw new Error("Failed to fetch products");
-          setProducts(data);
+          const res = await fetch(`/api/product-catalog?category=${shopType}`)
+          const data = await res.json()
+          if (!res.ok) throw new Error("Failed to fetch products")
+          setProducts(data)
         } catch (error) {
-          console.error(error);
+          console.error(error)
         } finally {
-          setLoading(false);
+          setLoading(false)
         }
-      };
-      fetchProducts();
+      }
+      fetchProducts()
     }
-  }, [isOpen, shopType, type, product]);
+  }, [isOpen, shopType, type, product])
+
+  const filteredProducts = products.filter(
+    (product) =>
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())),
+  )
 
   const handleProductSelect = (product: Product) => {
     const newMap = new Map(selectedProducts)
@@ -85,7 +102,6 @@ export default function ProductModal({ isOpen, onClose, shopType, shopId, produc
     }
   }
 
-
   const handleSave = async () => {
     try {
       if (type === "edit" && productDetails) {
@@ -108,31 +124,31 @@ export default function ProductModal({ isOpen, onClose, shopType, shopId, produc
         })
 
         if (!res.ok) throw new Error("Failed to add products")
-          onSubmit();
+        onSubmit()
       }
-      onClose();
+      onClose()
     } catch (error) {
-      console.error(error);
+      console.error(error)
     }
-  };
+  }
 
   const handleDelete = async () => {
-    if (!product) return;
+    if (!product) return
     try {
       const res = await fetch(`/api/products/${product.id}`, {
         method: "DELETE",
-      });
+      })
 
-      if (!res.ok) throw new Error("Failed to delete product");
+      if (!res.ok) throw new Error("Failed to delete product")
 
-      onSubmit();
-      onClose();
+      onSubmit()
+      onClose()
     } catch (error) {
-      console.error(error);
+      console.error(error)
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 z-50">
@@ -155,11 +171,39 @@ export default function ProductModal({ isOpen, onClose, shopType, shopId, produc
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="bg-gray-800 p-4 rounded-lg">
                   <h3 className="text-white font-medium mb-2">Available Products</h3>
+
+                  {/* Add search input */}
+                  <div className="mb-3">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search products..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full p-2 pl-8 rounded bg-gray-700 text-white text-sm"
+                      />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 absolute left-2 top-2.5 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+
                   {loading ? (
                     <p className="text-white">Loading products...</p>
                   ) : (
                     <ul className="max-h-40 overflow-y-auto">
-                      {products.map((product) => {
+                      {filteredProducts.map((product) => {
                         const isSelected = selectedProducts.has(product.id)
                         return (
                           <li key={product.id} className="mb-2">
@@ -180,6 +224,9 @@ export default function ProductModal({ isOpen, onClose, shopType, shopId, produc
                           </li>
                         )
                       })}
+                      {filteredProducts.length === 0 && !loading && (
+                        <li className="text-gray-400 text-sm py-2">No products found matching &#34;{searchQuery}&#34;</li>
+                      )}
                     </ul>
                   )}
                 </div>
@@ -363,3 +410,4 @@ export default function ProductModal({ isOpen, onClose, shopType, shopId, produc
     </div>
   )
 }
+
