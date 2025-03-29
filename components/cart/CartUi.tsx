@@ -1,21 +1,23 @@
-"use client";
+"use client"
 
-import { Dispatch, SetStateAction, useState } from "react";
-import { ShoppingCart, Plus, Minus, X, Trash } from "lucide-react";
-import PaymentForm from "../forms/PaymentForm";
+import { type Dispatch, type SetStateAction, useState } from "react"
+import { ShoppingCart, Plus, Minus, X, Trash } from "lucide-react"
+import PaymentForm from "../forms/PaymentForm"
 
 type CartItem = {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-};
+  id: string
+  name: string
+  price: number
+  quantity: number
+}
 
 interface CartUiProps {
-  cartItems: CartItem[];
-  setCartItems: Dispatch<SetStateAction<CartItem[]>>;
-  cartOpen: boolean;
-  setCartOpen: Dispatch<SetStateAction<boolean>>;
+  cartItems: CartItem[]
+  setCartItems: Dispatch<SetStateAction<CartItem[]>>
+  cartOpen: boolean
+  setCartOpen: Dispatch<SetStateAction<boolean>>
+  customerId: string // Add this prop
+  shopId: string // Add this prop
 }
 
 export default function CartUi({
@@ -23,35 +25,27 @@ export default function CartUi({
   setCartItems,
   cartOpen,
   setCartOpen,
+  customerId, // Add this parameter
+  shopId, // Add this parameter
 }: CartUiProps) {
-  const [deliveryOption, setDeliveryOption] = useState<"with" | "self" | null>(
-    null
-  );
-  const [deliveryError, setDeliveryError] = useState("");
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [deliveryOption, setDeliveryOption] = useState<"with" | "self" | null>(null)
+  const [deliveryError, setDeliveryError] = useState("")
+  const [showPaymentForm, setShowPaymentForm] = useState(false)
 
   const updateQuantity = (id: string, change: number) => {
     setCartItems((prev) =>
-      prev
-        .map((item) =>
-          item.id === id
-            ? { ...item, quantity: Math.max(1, item.quantity + change) }
-            : item
-        )
-    );
-  };
+      prev.map((item) => (item.id === id ? { ...item, quantity: Math.max(1, item.quantity + change) } : item)),
+    )
+  }
 
   const removeItem = (id: string) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
-  };
+    setCartItems((prev) => prev.filter((item) => item.id !== id))
+  }
 
-  const totalPrice = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
-  const deliveryFee = deliveryOption === "with" && totalPrice >= 500 ? Math.round(totalPrice * 0.15) : 0;
-  const finalTotal = totalPrice + deliveryFee;
+  const deliveryFee = deliveryOption === "with" && totalPrice >= 500 ? Math.round(totalPrice * 0.15) : 0
+  const finalTotal = totalPrice + deliveryFee
 
   return (
     <>
@@ -136,26 +130,24 @@ export default function CartUi({
                     deliveryOption === "with"
                       ? "bg-blue-600 text-slate-300"
                       : totalPrice < 500
-                      ? "bg-gray-300 text-gray-500 opacity-50"
-                      : "bg-green-600 text-slate-300"
+                        ? "bg-gray-300 text-gray-500 opacity-50"
+                        : "bg-green-600 text-slate-300"
                   }`}
                   disabled={totalPrice < 500}
                   onClick={() => {
-                    setDeliveryOption(deliveryOption === "with" ? null : "with");
-                    setDeliveryError("");
+                    setDeliveryOption(deliveryOption === "with" ? null : "with")
+                    setDeliveryError("")
                   }}
                 >
                   {deliveryOption === "with" ? "Without Delivery" : "With Delivery"}
                 </button>
                 <button
                   className={`p-2 rounded ${
-                    deliveryOption === "self"
-                      ? "bg-blue-600 text-slate-300"
-                      : "bg-gray-200 text-black"
+                    deliveryOption === "self" ? "bg-blue-600 text-slate-300" : "bg-gray-200 text-black"
                   }`}
                   onClick={() => {
-                    setDeliveryOption("self");
-                    setDeliveryError("");
+                    setDeliveryOption("self")
+                    setDeliveryError("")
                   }}
                 >
                   Self Pickup
@@ -182,8 +174,19 @@ export default function CartUi({
       )}
       {/* Payment Form Modal */}
       {showPaymentForm && (
-        <PaymentForm totalAmount={finalTotal} onClose={() => setShowPaymentForm(false)} />
+        <PaymentForm
+          totalAmount={finalTotal}
+          onClose={() => setShowPaymentForm(false)}
+          customerId={customerId}
+          shopId={shopId}
+          items={cartItems.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            price: item.price,
+          }))}
+        />
       )}
     </>
-  );
+  )
 }
+
