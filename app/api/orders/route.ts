@@ -52,7 +52,25 @@ export async function GET(req: Request) {
               updatedAt: true,
               customer: { select: { id: true, name: true, email: true } },
               shop: { select: { id: true, name: true } },
-              items: true,
+              items: {
+                select: {
+                  id: true,
+                  quantity: true,
+                  price: true,
+                  product: {
+                    select: {
+                      id: true,
+                      price: true,
+                      catalog: {
+                        select: {
+                          id: true,
+                          name: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
               transaction: true,
           },
       });

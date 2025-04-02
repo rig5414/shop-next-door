@@ -1,4 +1,4 @@
-export type OrderStatus = "Pending" | "Completed" | "Processing" | "Cancelled";
+export type OrderStatus = "Pending" | "Shipped" | "Completed" | "Cancelled";
 export type PaymentStatus = "Pending" | "Paid" | "Failed";
 
 export type OrderItem = {

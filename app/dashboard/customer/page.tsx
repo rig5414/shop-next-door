@@ -1,152 +1,175 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import DashboardLayout from "../../../components/layout/DashboardLayout";
-import DashboardHeader from "../../../components/dashboard/DashboardHeader";
-import DashboardStats from "../../../components/dashboard/DashboardStats";
-import OrderList from "../../../components/orders/OrderList";
-import ProductList from "../../../components/shop/ProductList";
-import OrderDetailsModal from "../../../components/orders/OrderDetailsModal"; 
-import Link from "next/link";
-import { FiShoppingBag } from "react-icons/fi";
-import { Order, Product } from "../../types";
-import { ShopStatus } from "@prisma/client";
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
+import DashboardLayout from "../../../components/layout/DashboardLayout"
+import DashboardHeader from "../../../components/dashboard/DashboardHeader"
+import DashboardStats from "../../../components/dashboard/DashboardStats"
+import OrderList from "../../../components/orders/OrderList"
+import ProductList from "../../../components/shop/ProductList"
+import OrderDetailsModal from "../../../components/orders/OrderDetailsModal"
+import Link from "next/link"
+import { FiShoppingBag } from "react-icons/fi"
+import type { Order, Product } from "../../types"
+import type { ShopStatus } from "@prisma/client"
 
 type Shop = {
-  id: string;
-  name: string;
-  description: string;
-  status: ShopStatus;
-};
+  id: string
+  name: string
+  description: string
+  status: ShopStatus
+}
 
 const CustomerDashboard = () => {
-  const { data: session, status } = useSession();
-  const [customerName, setCustomerName] = useState("User");
-  const [openShops, setOpenShops] = useState<Shop[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
+  const { data: session, status } = useSession()
+  const [customerName, setCustomerName] = useState("User")
+  const [openShops, setOpenShops] = useState<Shop[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([])
   const [stats, setStats] = useState({
     totalOrders: 0,
     pendingOrders: 0,
     totalSpent: 0,
-  });
+  })
 
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (status !== "authenticated" || !session?.user) return;
+    if (status !== "authenticated" || !session?.user) return
 
-    setCustomerName(session.user.name || "User");
-    fetchOrders(session.user.id);
-    fetchShops();
-    fetchProducts();
-  }, [session, status]);
+    setCustomerName(session.user.name || "User")
+    fetchOrders(session.user.id)
+    fetchShops()
+    fetchProducts()
+  }, [session, status])
 
   const fetchOrders = async (customerId: string) => {
     try {
-      const res = await fetch(`/api/orders?customerId=${customerId}`);
-      const data = await res.json();
+      const res = await fetch(`/api/orders?customerId=${customerId}`)
+      const data = await res.json()
 
-      console.log("Fetched Orders Data:", data);
+      console.log("Fetched Orders Data:", data)
 
       if (!Array.isArray(data)) {
-        console.error("Orders API did not return an array. Response:", data);
-        setOrders([]);
-        return;
+        console.error("Orders API did not return an array. Response:", data)
+        setOrders([])
+        return
       }
 
-      const totalOrders = data.length;
-      const pendingOrders = data.filter((order) => order.orderStatus === "Pending").length;
-      const totalSpent = data.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+      // Debug the actual field names in the first order
+      if (data.length > 0) {
+        console.log("First order fields:", Object.keys(data[0]))
+        console.log("First order status value:", data[0].status)
+      }
 
-      setOrders(data);
+      // Use status field instead of orderStatus
+      const pendingOrders = data.filter((order) => {
+        if (!order.status) return false
+
+        const statusLower = String(order.status).toLowerCase()
+        const isPending = statusLower === "pending"
+
+        console.log(`Order ${order.id}: Status "${order.status}" isPending: ${isPending}`)
+        return isPending
+      }).length
+
+      const totalOrders = data.length
+      const totalSpent = data.reduce((sum, order) => sum + (Number(order.total) || 0), 0)
+
+      console.log(`Setting stats - Total: ${totalOrders}, Pending: ${pendingOrders}, Spent: ${totalSpent}`)
+
+      setOrders(data)
       setStats({
         totalOrders,
         pendingOrders,
         totalSpent: isNaN(totalSpent) ? 0 : totalSpent,
-      });
+      })
     } catch (error) {
-      console.error("Error fetching orders:", error);
-      setOrders([]);
+      console.error("Error fetching orders:", error)
+      setOrders([])
     }
-  };
+  }
 
   const fetchShops = async () => {
     try {
-      const res = await fetch("/api/shops");
-      const data: Shop[] = await res.json();
+      const res = await fetch("/api/shops")
+      const data: Shop[] = await res.json()
 
-      console.log("Fetched Shops Data:", data);
+      console.log("Fetched Shops Data:", data)
 
       if (!Array.isArray(data)) {
-        console.error("Shops API did not return an array. Response:", data);
-        setOpenShops([]);
-        return;
+        console.error("Shops API did not return an array. Response:", data)
+        setOpenShops([])
+        return
       }
 
-      const openShops = data.filter((shop) => shop.status.toLowerCase() === "active");
-      setOpenShops(openShops);
+      const openShops = data.filter((shop) => shop.status.toLowerCase() === "active")
+      setOpenShops(openShops)
     } catch (error) {
-      console.error("Error fetching shops:", error);
-      setOpenShops([]);
+      console.error("Error fetching shops:", error)
+      setOpenShops([])
     }
-  };
+  }
 
   const fetchProducts = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const res = await fetch("/api/product-catalog");
-      const data: Product[] = await res.json();
+      const res = await fetch("/api/product-catalog")
+      const data: Product[] = await res.json()
 
-      console.log("Fetched Products Data:", data);
+      console.log("Fetched Products Data:", data)
 
       if (!Array.isArray(data)) {
-        console.warn("Product Catalog API did not return an array. Response:", data);
-        setRecommendedProducts([]);
-        return;
+        console.warn("Product Catalog API did not return an array. Response:", data)
+        setRecommendedProducts([])
+        return
       }
 
-      setRecommendedProducts(data.sort(() => 0.5 - Math.random()).slice(0, 6));
+      setRecommendedProducts(data.sort(() => 0.5 - Math.random()).slice(0, 6))
     } catch (error) {
-      console.error("Error fetching products:", error);
-      setRecommendedProducts([]);
+      console.error("Error fetching products:", error)
+      setRecommendedProducts([])
+    } finally {
+      setLoading(false)
     }
-    finally {
-      setLoading(false);
-    }
-  };
+  }
 
   return (
     <DashboardLayout role="customer">
-      <DashboardHeader title={`Welcome, ${customerName}!`} subtitle="Here’s what’s happening today." />
+      <DashboardHeader title={`Welcome, ${customerName}!`} subtitle="Here's what's happening today." />
 
       {/* Dashboard Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
         <DashboardStats title="Total Orders" value={stats.totalOrders.toString()} />
         <DashboardStats title="Pending Orders" value={stats.pendingOrders.toString()} />
-        <DashboardStats title="Total Spent" value={`Ksh. ${stats.totalSpent ? stats.totalSpent.toLocaleString() : "0"}`} />
+        <DashboardStats
+          title="Total Spent"
+          value={`Ksh. ${stats.totalSpent ? stats.totalSpent.toLocaleString() : "0"}`}
+        />
       </div>
 
       {/* Recent Orders */}
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Recent Orders</h2>
-        {orders.length > 0 ? <OrderList orders={orders} onOpenModal={setSelectedOrder} /> : <p className="text-gray-400">No orders found.</p>}
+        {orders.length > 0 ? (
+          <OrderList orders={orders} onOpenModal={setSelectedOrder} />
+        ) : (
+          <p className="text-gray-400">No orders found.</p>
+        )}
       </section>
 
       {/* Recommended Products */}
       <section className="mt-6">
-                <h2 className="text-xl font-semibold text-white">Recommended for You</h2>
-                {loading ? <p className="text-gray-400">Loading products...</p> : recommendedProducts.length > 0 ? (
-                    <ProductList
-                        products={recommendedProducts.map(product => ({ ...product, stock: 0 }))}
-                        hidePriceAndStock
-                    />
-                ) : (
-                    <p className="text-gray-400">No products available.</p>
-                )}
-            </section>
+        <h2 className="text-xl font-semibold text-white">Recommended for You</h2>
+        {loading ? (
+          <p className="text-gray-400">Loading products...</p>
+        ) : recommendedProducts.length > 0 ? (
+          <ProductList products={recommendedProducts.map((product) => ({ ...product, stock: 0 }))} hidePriceAndStock />
+        ) : (
+          <p className="text-gray-400">No products available.</p>
+        )}
+      </section>
 
       {/* Open Shops Section */}
       <section className="mt-6 bg-gray-800 p-4 rounded-lg shadow-md">
@@ -154,7 +177,11 @@ const CustomerDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {openShops.length > 0 ? (
             openShops.map((shop) => (
-              <Link key={shop.id} href={`/dashboard/customer/shops/${shop.id}`} className="block bg-gray-900 p-4 rounded-md hover:bg-gray-700 transition">
+              <Link
+                key={shop.id}
+                href={`/dashboard/customer/shops/${shop.id}`}
+                className="block bg-gray-900 p-4 rounded-md hover:bg-gray-700 transition"
+              >
                 <div className="flex items-center">
                   <FiShoppingBag className="text-blue-400 w-6 h-6 mr-3" />
                   <div>
@@ -173,7 +200,8 @@ const CustomerDashboard = () => {
       {/* Order Details Modal */}
       {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
     </DashboardLayout>
-  );
-};
+  )
+}
 
-export default CustomerDashboard;
+export default CustomerDashboard
+
