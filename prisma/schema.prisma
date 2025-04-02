@@ -110,7 +110,7 @@ enum ShopStatus {
 
 enum OrderStatus {
   pending
-  packed
+  shipped
   completed
   cancelled
 }
