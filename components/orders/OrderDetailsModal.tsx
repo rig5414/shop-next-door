@@ -64,11 +64,11 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, onClose })
     }
   }
 
-  // Helper function to get item name based on your schema structure
+  // Helper function to get item name based on the schema structure
   const getItemName = (item: any) => {
     // Try different possible paths to get the product name based on your schema
     return (
-      // Direct name on the item (might be included in API response)
+      // Direct name on the item
       item.name ||
       // If item has product with catalog
       item.product?.catalog?.name ||

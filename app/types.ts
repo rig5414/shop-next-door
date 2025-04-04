@@ -1,5 +1,5 @@
 export type OrderStatus = "Pending" | "Shipped" | "Completed" | "Cancelled";
-export type PaymentStatus = "Pending" | "Paid" | "Failed";
+export type TransactionStatus = "Pending" | "Paid" | "Failed";
 
 export type OrderItem = {
     id: string;
@@ -14,7 +14,7 @@ export type OrderItem = {
     customer: { id: string; name: string; email: string };
     shop: { id: string; name: string };
     total: number;
-    paymentStatus: PaymentStatus;
+    paymentStatus: TransactionStatus;
     status: OrderStatus;
     items: OrderItem[];
     isRefunded?: boolean;

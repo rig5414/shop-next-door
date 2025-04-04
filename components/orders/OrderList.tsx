@@ -38,7 +38,7 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onOpenModal }) => {
                 <tr key={order.id} className="border-b border-gray-700">
                   <td className="p-2">{order.customer?.name || "Unknown"}</td>
                   <td className="p-2">{order.shop?.name || "Unknown"}</td>
-                  <td className={`p-2 ${statusColors[order.status] || "text-gray-400"}`}>
+                  <td className={`p-2 ${statusColors[order.status.toLowerCase()] || "text-gray-400"}`}>
                     {statusText}
                   </td>
                   <td className="p-2 text-right">
