@@ -152,7 +152,7 @@ export default function ProductModal({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 z-50">
-      <div className="bg-gray-900 rounded-lg w-full max-w-md flex flex-col h-[80vh] max-h-[600px]">
+      <div className="bg-gray-900 rounded-lg w-full max-w-md flex flex-col max-h-[500px]">
         {/* Header */}
         <div className="p-4 border-b border-gray-700">
           {type === "add" && (
@@ -306,7 +306,7 @@ export default function ProductModal({
                   <div className="mr-4">
                     <Image
                       src={productDetails.image || "/images/placeholder.jpg"}
-                      alt={productDetails.name}
+                      alt={productDetails.name || "Product Image"}
                       width={80}
                       height={80}
                       className="rounded-md object-cover"
@@ -354,7 +354,7 @@ export default function ProductModal({
                   <div className="mr-4">
                     <Image
                       src={product.image || "/images/placeholder.jpg"}
-                      alt={product.name}
+                      alt={product.name || "Product Image"}
                       width={80}
                       height={80}
                       className="rounded-md object-cover"
@@ -375,7 +375,7 @@ export default function ProductModal({
         </div>
 
         {/* Footer with buttons - Fixed at bottom */}
-        <div className="p-4 border-t border-gray-700 bg-gray-900 rounded-b-lg">
+        <div className="p-4 border-t border-gray-700 bg-gray-900 rounded-b-lg mt-auto">
           <div className="flex justify-end">
             <button onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded mr-2">
               Cancel
