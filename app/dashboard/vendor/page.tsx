@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import DashboardLayout from "../../../components/layout/DashboardLayout"
 import DashboardHeader from "../../../components/dashboard/DashboardHeader"
 import DashboardStats from "../../../components/dashboard/DashboardStats"
@@ -136,17 +135,13 @@ const VendorDashboard = () => {
     try {
       const newStatus = shopOpen ? "inactive" : "active"
 
-      // Use your existing shop update API
+      // Only send status and vendorId (for authorization)
       const res = await fetch(`/api/shops/${shopId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: newStatus,
           vendorId: vendorId,
-          // Include these to satisfy your API requirements
-          name: "Shop Name", // This will be ignored if not changing
-          description: "Shop Description", // This will be ignored if not changing
-          type: "local_shop", // This will be ignored if not changing
         }),
       })
 
@@ -318,9 +313,6 @@ const VendorDashboard = () => {
       <section className="mt-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-white">Your Products</h2>
-          <Link href={`/dashboard/vendor/shop`} className="text-blue-400 hover:text-blue-300">
-            View All Products →
-          </Link>
         </div>
         {loading ? (
           <p className="text-gray-400">Loading products...</p>
@@ -338,9 +330,6 @@ const VendorDashboard = () => {
       <section className="mt-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-white">Recent Orders</h2>
-          <Link href="/dashboard/vendor/orders" className="text-blue-400 hover:text-blue-300">
-            View All Orders →
-          </Link>
         </div>
         {orders.length > 0 ? (
           <OrderList orders={orders.slice(0, 5)} onOpenModal={handleOpenDrawer} />

@@ -38,7 +38,6 @@ const RevenueChart = ({ className = "" }) => {
   return (
     <div
       className={`bg-gray-800 p-4 rounded-lg shadow-md cursor-pointer hover:opacity-80 transition-opacity ${className}`}
-      onClick={() => router.push("/analytics/revenue")}
     >
       <h2 className="text-white text-xl font-semibold mb-3">Revenue Breakdown</h2>
       <ResponsiveContainer width="100%" height={300}>

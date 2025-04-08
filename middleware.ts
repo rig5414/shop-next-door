@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function middleware(req: NextRequest) {
-  // TEMPORARY BYPASS: Remove authentication check
-  // const token = req.cookies.get("appSession")?.value;
-  // if (!token) {
-  //   return NextResponse.redirect(new URL("/api/auth/login", req.url));
-  // }
+  // Check for authentication
+  const token = req.cookies.get("next-auth.session-token")?.value || 
+                req.cookies.get("__Secure-next-auth.session-token")?.value;
+  
+  // If no authentication token, redirect to login
+  if (!token) {
+    // For API requests, return 401 Unauthorized
+    if (req.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    
+    // For page requests, redirect to login with return URL
+    const returnUrl = encodeURIComponent(req.nextUrl.pathname);
+    return NextResponse.redirect(new URL(`/auth/login?returnUrl=${returnUrl}`, req.url));
+  }
 
   // Extract user role from cookie (assuming role is stored in JWT or session)
   const userRole = req.cookies.get("userRole")?.value || "customer"; // Default to customer

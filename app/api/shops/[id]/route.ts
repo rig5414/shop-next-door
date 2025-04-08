@@ -31,12 +31,16 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
 
 // PUT: Update a shop (only the vendor can update)
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, context: { params: { id: string } }) {
     try {
+        // Await the params object
+        const params = await context.params;
+        const id = params.id;
+        
         const { name, description, status, vendorId, type } = await req.json();
 
         // Validate shop exists
-        const shop = await prisma.shop.findUnique({ where: { id: params.id } });
+        const shop = await prisma.shop.findUnique({ where: { id } });
         if (!shop) {
             return NextResponse.json({ message: "Shop not found" }, { status: 404 });
         }
@@ -46,16 +50,25 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
             return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
         }
 
-        //Validate the type.
-        const validTypes = ["local_shop","grocery_shop",];
-        if (!validTypes.includes(type)){
-          return NextResponse.json({message:"Invalid shop type"},{status:400})
+        // Validate the type only if it's provided
+        if (type !== undefined) {
+            const validTypes = ["local_shop", "grocery_shop"];
+            if (!validTypes.includes(type)){
+              return NextResponse.json({message: "Invalid shop type"}, {status: 400})
+            }
         }
+
+        // Create update data object with only provided fields
+        const updateData: any = {};
+        if (name !== undefined) updateData.name = name;
+        if (description !== undefined) updateData.description = description;
+        if (status !== undefined) updateData.status = status;
+        if (type !== undefined) updateData.type = type;
 
         // Update shop
         const updatedShop = await prisma.shop.update({
-            where: { id: params.id },
-            data: { name, description, status, type },
+            where: { id },
+            data: updateData
         });
 
         return NextResponse.json(updatedShop, { status: 200 });

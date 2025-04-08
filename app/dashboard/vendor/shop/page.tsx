@@ -26,19 +26,29 @@ const VendorShopPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      console.log("No user session Id available"); 
+      return;
+    }
+
+    console.log("Fetching shop data for vendor Id:", session.user.id);
 
     const fetchShop = async () => {
       try {
+        console.log("Making API request to /api/shops");
         const res = await fetch(`/api/shops?vendorId=${session.user.id}`);
+        console.log("Api response status:", res.status);
         const data = await res.json();
-        console.log('shopOfVendor: ',data);
+        console.log('Shop data received:',data);
+
         if (!res.ok) throw new Error(data.error || "Failed to fetch shop data");
 
         setShop(Array.isArray(data) ? data[0] : data);
+        console.log("Shop state set:", Array.isArray(data) ? data[0] : data);
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching shop",error);
       } finally {
+        console.log("Setting loading to false");
         setLoading(false);
       }
     };
@@ -53,7 +63,10 @@ const VendorShopPage = () => {
       const res = await fetch(`/api/shops/${shop.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedShop),
+        body: JSON.stringify({
+          ...updatedShop,
+          vendorId: shop.vendorId,
+        }),
       });
 
       const data = await res.json();
@@ -72,10 +85,11 @@ const VendorShopPage = () => {
 
   if (loading) return <p className="text-white">Loading shop data...</p>;
   if (!shop) return <p className="text-white">No shop found for this vendor.</p>;
+  console.log("Rendering with shop:", shop, "Loading:", loading);
 
   return (
     <DashboardLayout role="vendor">
-      <ShopInfoCard shopId={shop.id} onEdit={() => setIsEditOpen(true)} />
+      <ShopInfoCard shopId={shop.id} onEdit={() => setIsEditOpen(true)} shopData={shop} />
 
       {isEditOpen && (
         <EditShopModal

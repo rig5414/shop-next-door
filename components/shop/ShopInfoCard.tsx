@@ -5,6 +5,7 @@ import { fetchShop } from "../../lib/api";
 interface ShopInfoProps {
   shopId: string;
   onEdit: (shop: ShopData) => void;
+  shopData?: ShopData;
 }
 
 interface ShopData {
@@ -21,11 +22,16 @@ const categoryMap: Record<ShopData["type"], string> = {
   grocery_shop: "Grocery Shop",
 };
 
-const ShopInfoCard: React.FC<ShopInfoProps> = ({ shopId, onEdit }) => {
+const ShopInfoCard: React.FC<ShopInfoProps> = ({ shopId, onEdit, shopData }) => {
   const [shop, setShop] = useState<ShopData | null>(null);
   const [loading, setLoading] = useState(true); // Add loading state
 
   useEffect(() => {
+    if (shopData) {
+      setShop(shopData);
+      setLoading(false);
+      return;
+    }
     const loadShop = async () => {
       setLoading(true); // Set loading to true before fetching
       try {
@@ -40,7 +46,7 @@ const ShopInfoCard: React.FC<ShopInfoProps> = ({ shopId, onEdit }) => {
     };
 
     loadShop();
-  }, [shopId]);
+  }, [shopId, shopData]);
 
   if (loading) {
     return <p className="text-gray-400">Loading shop details...</p>;

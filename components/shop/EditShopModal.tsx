@@ -50,7 +50,11 @@ const EditShopModal: React.FC<EditShopModalProps> = ({ isOpen, onClose, shopData
         throw new Error(data.message || "Failed to update shop");
       }
 
-      onSave(shop);
+      onSave({
+        name: shop.name,
+        description: shop.description,
+        type: shop.type
+      });
       onClose();
     } catch (err: any) {
       setError(err.message);

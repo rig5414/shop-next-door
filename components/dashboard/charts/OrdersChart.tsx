@@ -45,7 +45,6 @@ export default function OrdersChart({ className = "" }) {
     return (
         <div
             className={`bg-gray-800 p-4 rounded-lg shadow-md cursor-pointer hover:opacity-80 transition-opacity ${className}`}
-            onClick={() => router.push("/analytics/orders")}
         >
             <h2 className="text-white text-xl font-semibold mb-3">Pending vs. Completed Orders</h2>
 
