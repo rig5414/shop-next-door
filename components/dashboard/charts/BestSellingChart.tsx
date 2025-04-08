@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { useRouter } from "next/navigation";
 import { fetchInsights } from "../../../lib/fetchInsights";
@@ -13,17 +13,52 @@ const COLORS = [
     "#F4A261", // Light orange
 ];
 
+// Custom tooltip component
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white border border-gray-300 rounded-md p-2 shadow-md">
+                <p className="text-gray-800">{`Product: ${payload[0].payload.product}`}</p>
+                <p className="text-gray-800">{`Quantity Sold: ${payload[0].payload.quantitySold}`}</p>
+                <p className="text-gray-800">{`Percentage: ${payload[0].payload.percentage.toFixed(2)}%`}</p>
+            </div>
+        );
+    }
+
+    return null;
+};
+
+interface BestSellingData {
+    product: string;
+    quantitySold: number;
+    percentage?: number; // Make percentage optional
+}
+
 export default function BestSellingChart({ className = "" }) {
     const router = useRouter();
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<BestSellingData[]>([]);
 
     useEffect(() => {
         async function fetchData() {
             try {
                 const insights = await fetchInsights();
                 if (insights && insights.bestSelling) {
-                    setData(insights.bestSelling);
-                    console.log("Fetched data:", insights.bestSelling);
+                    // Calculate total quantity for percentage calculation
+                    const totalQuantity = insights.bestSelling.reduce(
+                        (sum: number, item: { quantitySold: number }) => sum + item.quantitySold,
+                        0
+                    );
+
+                    // Add percentage to each data item
+                    const enrichedData: BestSellingData[] = insights.bestSelling.map(
+                        (item: { product: string, quantitySold: number }) => ({
+                            product: item.product,
+                            quantitySold: item.quantitySold,
+                            percentage: (item.quantitySold / totalQuantity) * 100,
+                        })
+                    );
+                    setData(enrichedData);
+                    console.log("Fetched data:", enrichedData);
                 } else {
                     console.error("No bestSelling data found in insights");
                 }
@@ -87,10 +122,10 @@ export default function BestSellingChart({ className = "" }) {
                             }}
                         >
                             {data.map((_, index) => (
-                                <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
-                        <Tooltip />
+                        <Tooltip content={<CustomTooltip />} />
                     </PieChart>
                 </ResponsiveContainer>
             ) : (
@@ -99,3 +134,4 @@ export default function BestSellingChart({ className = "" }) {
         </div>
     );
 }
+

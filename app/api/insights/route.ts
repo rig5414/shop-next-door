@@ -3,18 +3,29 @@ import { prisma } from "../../../lib/prisma";
 
 export async function GET() {
   try {
-    // 1️⃣ **Total Sales per Month** (Sum of all order values)
-    const sales = await prisma.order.groupBy({
-      by: ["createdAt"],
-      _sum: { total: true },
-      _count: { id: true }, // Count total orders
-      orderBy: { createdAt: "desc" },
+    // 1️⃣ **Total Sales (Aggregated by Day)**
+    const sales = await prisma.order.findMany({
+      orderBy: { createdAt: "asc" },
+      select: {
+        createdAt: true,
+        total: true,
+      },
     });
 
-    const salesData = sales.map((s) => ({
-      month: new Date(s.createdAt).toLocaleString("en-US", { month: "short" }),
-      total: s._sum?.total?.toNumber() ?? 0,
-      orderCount: s._count.id,
+    const dailySales: { [date: string]: number } = {}; // Use an object to store daily totals
+
+    sales.forEach((sale) => {
+      const date = sale.createdAt.toISOString().split("T")[0]; // Get YYYY-MM-DD
+      if (dailySales[date]) {
+        dailySales[date] += sale.total.toNumber(); // Add to existing total
+      } else {
+        dailySales[date] = sale.total.toNumber(); // Start new total for the day
+      }
+    });
+
+    const salesData = Object.entries(dailySales).map(([date, total]) => ({
+      date,
+      total,
     }));
 
     // 2️⃣ **Best-Selling Products** (Top 5 products)
@@ -29,7 +40,7 @@ export async function GET() {
       bestSelling.map(async (item) => {
         const product = await prisma.product.findUnique({
           where: { id: item.productId },
-          select: { catalog: { select: { name: true } } }, // Directly get catalog name
+          select: { catalog: { select: { name: true } } },
         });
 
         return {
@@ -85,7 +96,7 @@ export async function GET() {
 
     // Final JSON Response
     return NextResponse.json({
-      sales: salesData,
+      sales: salesData, // Use the aggregated sales data
       bestSelling: bestSellingData,
       revenue: revenueData,
       orders: orderData,

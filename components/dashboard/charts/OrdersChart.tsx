@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { useRouter } from "next/navigation";
 import { fetchInsights } from "../../../lib/fetchInsights";
@@ -8,25 +8,37 @@ import { fetchInsights } from "../../../lib/fetchInsights";
 const COMPLETED_COLOR = "rgba(75, 192, 192, 0.6)";
 const PENDING_COLOR = "rgba(255, 159, 64, 0.6)";
 
+interface OrdersData {
+    status: string;
+    completed: number;
+    pending: number;
+}
+
 export default function OrdersChart({ className = "" }) {
     const router = useRouter();
-    const [data, setData] = useState<{ status: string; completed: number; pending: number }[]>([]);
+    const [data, setData] = useState<OrdersData[]>([]);
 
     useEffect(() => {
         async function fetchData() {
             try {
                 const insights = await fetchInsights();
-                console.log("Insights:", insights); // Log the insights object
+                console.log("Insights:", insights);
 
                 if (insights && insights.orders) {
-                    setData([
+                    // Assuming insights.orders is an object with completed and pending counts
+                    const completedCount = insights.orders.find((o: any) => o.status === 'completed')?.count || 0;
+                    const pendingCount = insights.orders.find((o: any) => o.status === 'pending')?.count || 0;
+
+                    const chartData: OrdersData[] = [
                         {
-                            status: "Orders",
-                            completed: insights.orders.completed ?? 0,
-                            pending: insights.orders.pending ?? 0,
+                            status: "Orders", // Label for the X-axis
+                            completed: completedCount,
+                            pending: pendingCount,
                         },
-                    ]);
-                    console.log("Orders Data:", insights.orders); // Log the orders data
+                    ];
+                    setData(chartData);
+
+                    console.log("Orders Data:", chartData);
                 } else {
                     console.error("No orders data found in insights");
                 }
@@ -38,15 +50,11 @@ export default function OrdersChart({ className = "" }) {
         fetchData();
     }, []);
 
-    if (data.length > 0) {
-        console.log("Data State:", data); // Log the data state
-    }
-
     return (
         <div
             className={`bg-gray-800 p-4 rounded-lg shadow-md cursor-pointer hover:opacity-80 transition-opacity ${className}`}
         >
-            <h2 className="text-white text-xl font-semibold mb-3">Pending vs. Completed Orders</h2>
+            <h2 className="text-white text-xl font-semibold mb-3">Completed vs. Pending Orders</h2>
 
             {data.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
@@ -66,3 +74,4 @@ export default function OrdersChart({ className = "" }) {
         </div>
     );
 }
+
