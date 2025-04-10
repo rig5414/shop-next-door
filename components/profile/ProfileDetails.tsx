@@ -88,7 +88,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
   };
 
   return (
-    <div className="p-6 bg-[#0f0c29] rounded-2xl shadow-lg neon-glow">
+    <div className="p-6 bg-[#0f0c29] rounded-2xl mb-2 shadow-lg neon-glow">
       <h2 className="text-xl font-semibold text-white mb-4">Profile Details</h2>
 
       <div className="space-y-4">

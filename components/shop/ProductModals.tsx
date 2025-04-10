@@ -368,7 +368,7 @@ export default function ProductModal({
                 </div>
               </div>
               <p className="text-red-400 text-sm">
-                Warning: This action cannot be undone. The product will be permanently removed from your shop.
+                <strong>CAUTION:</strong> This action cannot be undone. This product will be permanently removed from your shop.
               </p>
             </div>
           )}

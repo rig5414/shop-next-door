@@ -6,8 +6,8 @@ import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 
 // GET: Fetch a single user by ID
-export async function GET(req: Request, context: { params: { id: string } }) {
-  const { id } = context.params;
+export async function GET(req: Request, { params }: { params: { id: string } }) {
+  const  id = params.id;
   try {
     const user = await prisma.user.findUnique({
       where: { id },

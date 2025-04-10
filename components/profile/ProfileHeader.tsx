@@ -28,7 +28,7 @@ const ProfileHeader = () => {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 p-6 bg-[#0f0c29] rounded-2xl shadow-lg neon-glow">
+    <div className="flex flex-col items-center mb-1 gap-4 p-6 bg-[#0f0c29] rounded-2xl shadow-lg neon-glow">
       <div className="relative">
         <Image
           src={selectedAvatar}
