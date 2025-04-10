@@ -37,7 +37,8 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
         const params = await context.params;
         const id = params.id;
         
-        const { name, description, status, vendorId, type } = await req.json();
+        const { name, description, status, type } = await req.json();
+
 
         // Validate shop exists
         const shop = await prisma.shop.findUnique({ where: { id } });
@@ -45,11 +46,7 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
             return NextResponse.json({ message: "Shop not found" }, { status: 404 });
         }
 
-        // Ensure the vendor is the shop owner
-        if (shop.vendorId !== vendorId) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
-        }
-
+    
         // Validate the type only if it's provided
         if (type !== undefined) {
             const validTypes = ["local_shop", "grocery_shop"];
