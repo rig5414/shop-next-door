@@ -96,7 +96,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Updated to match VendorsTable's expected function signature
+  // Updated to match VendorsTable's expected function
   const toggleVendorStatus = async (id: string, newStatus: string) => {
     try {
       const response = await fetch(`/api/shops/${id}`, {
