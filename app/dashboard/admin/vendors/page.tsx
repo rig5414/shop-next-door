@@ -135,25 +135,29 @@ const AdminVendorsPage = () => {
     }
   }
 
-  return (
-    <DashboardLayout role="admin">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-white">Vendor Management</h1>
-        {loading ? (
-          <p className="text-gray-400">Loading vendors...</p>
-        ) : error ? (
-          <p className="text-red-500">{error}</p>
-        ) : (
-          <VendorsTable
-            vendors={vendors}
-            toggleVendorStatus={toggleVendorStatus}
-            updateVendorCategory={updateVendorCategory}
-            deleteVendorShop={deleteVendorShop}
-          />
-        )}
-      </div>
-    </DashboardLayout>
-  );
+  return (  
+    <DashboardLayout role="admin">  
+      <div className="p-6">  
+        <h1 className="text-2xl font-bold text-white">Vendor Management</h1>  
+        {loading ? (  
+          <div className="flex justify-start items-center h-full"> 
+            <p className="text-gray-400">Loading vendors...</p> 
+            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500">
+            </div>  
+          </div>  
+        ) : error ? (  
+          <p className="text-red-500">{error}</p>  
+        ) : (  
+          <VendorsTable  
+            vendors={vendors}  
+            toggleVendorStatus={toggleVendorStatus}  
+            updateVendorCategory={updateVendorCategory}  
+            deleteVendorShop={deleteVendorShop}  
+          />  
+        )}  
+      </div>  
+    </DashboardLayout>  
+  );  
 };
 
 export default AdminVendorsPage;

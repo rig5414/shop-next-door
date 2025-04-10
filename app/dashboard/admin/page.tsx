@@ -22,9 +22,11 @@ interface User {
 
 interface Vendor {
   id: string;
+  sshopId: string;
   name: string;
   shop: string;
-  status: "Approved" | "Pending" | "Suspended";
+  status: "active" | "inactive";
+  category: "local_shop" | "grocery_shop";
 }
 
 const AdminDashboard = () => {
@@ -42,61 +44,110 @@ const AdminDashboard = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-
-        const [usersRes, vendorsRes, ordersRes, transactionsRes] = await Promise.all([
-          fetch("/api/users"),
-          fetch("/api/shops"),
-          fetch("/api/orders"),
-          fetch("/api/transactions"),
-        ]);
-
-        const usersData = await usersRes.json();
-        const vendorsData = await vendorsRes.json();
-        const ordersData = await ordersRes.json();
-        const transactionsData = await transactionsRes.json();
-
-        setUsers(usersData);
-        setTotalUsers(usersData.length);
-        setVendors(vendorsData);
-        setTotalVendors(vendorsData.length);
-        setTotalOrders(ordersData.length);
-
-        const totalRevenue = transactionsData
-          .filter((t: any) => t.status === "successful")
-          .reduce((acc: number, curr: any) => acc + parseFloat(curr.amount), 0);
-
-        setPlatformRevenue(`Ksh ${totalRevenue.toLocaleString()}`);
-        setLoading(false);
-      } catch (err) {
-        setError("Failed to load dashboard data.");
-        setLoading(false);
-      }
-    };
-
     fetchDashboardData();
   }, []);
 
-  const toggleVendorStatus = async (id: string) => {
+  const fetchDashboardData = async () => {
     try {
-      const vendor = vendors.find((v) => v.id === id);
-      if (!vendor) return;
+      setLoading(true);
 
-      const newStatus = vendor.status === "Approved" ? "Suspended" : "Approved";
+      const [usersRes, shopsRes, ordersRes, transactionsRes] = await Promise.all([
+        fetch("/api/users"),
+        fetch("/api/shops"),
+        fetch("/api/orders"),
+        fetch("/api/transactions"),
+      ]);
 
-      await fetch(`/api/shops/${id}`, {
-        method: "PATCH",
+      const usersData = await usersRes.json();
+      const shopsData = await shopsRes.json();
+      const ordersData = await ordersRes.json();
+      const transactionsData = await transactionsRes.json();
+
+      setUsers(usersData);
+      setTotalUsers(usersData.length);
+      
+      // Format vendors data to match what VendorsTable expects
+      const vendorUsers = usersData.filter((user: any) => user.role === "vendor");
+      const formattedVendors = vendorUsers.map((vendor: any) => {
+        const shop = shopsData.find((s: any) => s.vendor?.id === vendor.id);
+        return {
+          id: vendor.id,
+          sshopId: shop?.id || "",
+          name: vendor.name,
+          shop: shop?.name || "No Shop",
+          status: shop?.status || "inactive",
+          category: shop?.type || "local_shop",
+        };
+      });
+      
+      setVendors(formattedVendors);
+      setTotalVendors(formattedVendors.length);
+      setTotalOrders(ordersData.length);
+
+      const totalRevenue = transactionsData
+        .filter((t: any) => t.status === "successful")
+        .reduce((acc: number, curr: any) => acc + parseFloat(curr.amount), 0);
+
+      setPlatformRevenue(`Ksh ${totalRevenue.toLocaleString()}`);
+      setLoading(false);
+    } catch (err) {
+      setError("Failed to load dashboard data.");
+      setLoading(false);
+    }
+  };
+
+  // Updated to match VendorsTable's expected function signature
+  const toggleVendorStatus = async (id: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/shops/${id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
+        credentials: "include"
       });
 
-      setVendors((prev) =>
-        prev.map((v) => (v.id === id ? { ...v, status: newStatus } : v))
-      );
+      if (!response.ok) throw new Error("Failed to update status");
+      
+      // Refresh all dashboard data
+      await fetchDashboardData();
     } catch (err) {
       console.error("Failed to update vendor status", err);
+      alert("Error updating vendor status");
+    }
+  };
+
+  // Add functions needed by VendorsTable
+  const updateVendorCategory = async (id: string, newCategory: "local_shop" | "grocery_shop") => {
+    try {
+      const response = await fetch(`/api/shops/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: newCategory }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update category");
+      
+      // Refresh all dashboard data
+      await fetchDashboardData();
+    } catch (err) {
+      console.error(err);
+      alert("Error updating vendor category");
+    }
+  };
+
+  const deleteVendorShop = async (id: string) => {
+    try {
+      const response = await fetch(`/api/shops/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete shop");
+      
+      // Refresh all dashboard data
+      await fetchDashboardData();
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting vendor shop");
     }
   };
 
@@ -158,7 +209,12 @@ const AdminDashboard = () => {
             View All Vendors →
           </Link>
         </div>
-        <VendorsTable vendors={vendors} toggleVendorStatus={toggleVendorStatus} />
+        <VendorsTable 
+          vendors={vendors} 
+          toggleVendorStatus={toggleVendorStatus} 
+          updateVendorCategory={updateVendorCategory}
+          deleteVendorShop={deleteVendorShop}
+        />
       </section>
     </DashboardLayout>
   );

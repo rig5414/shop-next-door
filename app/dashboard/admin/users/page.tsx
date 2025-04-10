@@ -132,9 +132,9 @@ const UsersPage = () => {
             users={users}
             toggleUserStatus={toggleUserStatus}
             handleLoginAsUser={handleLoginAsUser}
-            updateUserRole={updateUserRole} // ✅ Fixed: Added missing prop
-            deleteUser={deleteUser} // ✅ Fixed: Added missing prop
-            updateUserDetails={updateUserDetails} // ✅ Fixed: Added missing prop
+            updateUserRole={updateUserRole}
+            deleteUser={deleteUser}
+            updateUserDetails={updateUserDetails}
           />
         )}
       </div>
