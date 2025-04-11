@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { FiEdit, FiLock, FiUserX, FiLogIn, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiEdit, FiLogIn, FiTrash2, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import UserRoleDropdown from "../settings/UserRoleDropdown";
 import bcrypt from "bcryptjs";
 
@@ -11,22 +11,25 @@ interface User {
   name: string;
   email: string;
   role: string;
-  status: "Active" | "Suspended";
 }
 
 interface UsersTableProps {
   users: User[];
-  toggleUserStatus: (id: string) => void;
   handleLoginAsUser: (id: string) => void;
   updateUserRole: (id: string, role: string) => void;
   deleteUser: (id: string) => void;
   updateUserDetails: (id: string, updatedUser: Partial<User>) => void;
 }
 
-const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handleLoginAsUser, updateUserRole, updateUserDetails, deleteUser }) => {
+const UsersTable: React.FC<UsersTableProps> = ({ 
+  users, 
+  handleLoginAsUser, 
+  updateUserRole, 
+  updateUserDetails, 
+  deleteUser 
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
@@ -39,40 +42,39 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, toggleUserStatus, handle
   const [role, setRole] = useState("");
   const usersPerPage = 5;
 
-// Open edit modal
-const openEditModal = (user: User) => {
-  const [fName, lName] = user.name.split(" ");
-  setEditUser(user);
-  setFirstName(fName || "");
-  setLastName(lName || "");
-  setEmail(user.email);
-  setRole(user.role);
-  setShowModal(true);
-};
-
-// Handle update user
-const handleUpdateUser = async () => {
-  if (!editUser) return;
-  const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
-
-  const updatedUser: Partial<User> = {
-    name: `${firstName} ${lastName}`,
-    email,
-    role,
-    ...(hashedPassword && { password: hashedPassword }),
+  // Open edit modal
+  const openEditModal = (user: User) => {
+    const [fName, lName] = user.name.split(" ");
+    setEditUser(user);
+    setFirstName(fName || "");
+    setLastName(lName || "");
+    setEmail(user.email);
+    setRole(user.role);
+    setShowModal(true);
   };
 
-  updateUserDetails(editUser.id, updatedUser);
-  setShowModal(false);
-};
+  // Handle update user
+  const handleUpdateUser = async () => {
+    if (!editUser) return;
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+
+    const updatedUser: Partial<User> = {
+      name: `${firstName} ${lastName}`,
+      email,
+      role,
+      ...(hashedPassword && { password: hashedPassword }),
+    };
+
+    updateUserDetails(editUser.id, updatedUser);
+    setShowModal(false);
+  };
 
   // Filter users based on search and filters
   const filteredUsers = users.filter((user) => {
     return (
       (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (roleFilter ? user.role === roleFilter : true) &&
-      (statusFilter ? user.status === statusFilter : true)
+      (roleFilter ? user.role === roleFilter : true)
     );
   });
 
@@ -87,9 +89,9 @@ const handleUpdateUser = async () => {
     );
   };
 
-  const bulkToggleStatus = () => {
-    selectedUsers.forEach((id) => toggleUserStatus(id));
-    setSelectedUsers([]);
+  // Handle login as user - opens in new tab
+  const handleLoginAsUserClick = (userId: string) => {
+    handleLoginAsUser(userId);
   };
 
   // Handle delete confirmation
@@ -127,31 +129,10 @@ const handleUpdateUser = async () => {
         >
           <option value="">All Roles</option>
           <option value="admin">Admin</option>
-          <option value="editor">Vendor</option>
-          <option value="user">Customer</option>
-        </select>
-
-        <select
-          aria-label="Filter by status"
-          className="p-2 bg-gray-700 rounded-md text-white"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="">All Status</option>
-          <option value="Active">Active</option>
-          <option value="Suspended">Suspended</option>
+          <option value="vendor">Vendor</option>
+          <option value="customer">Customer</option>
         </select>
       </div>
-
-      {/* Bulk Actions */}
-      {selectedUsers.length > 0 && (
-        <button
-          onClick={bulkToggleStatus}
-          className="mb-2 p-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-        >
-          Toggle Status for Selected Users
-        </button>
-      )}
 
       {/* User Table */}
       <table className="w-full">
@@ -170,7 +151,6 @@ const handleUpdateUser = async () => {
             <th className="p-2">Name</th>
             <th className="p-2">Email</th>
             <th className="p-2">Role</th>
-            <th className="p-2">Status</th>
             <th className="p-2">Actions</th>
           </tr>
         </thead>
@@ -193,26 +173,31 @@ const handleUpdateUser = async () => {
                   onRoleChange={(newRole) => updateUserRole(user.id, newRole)}
                 />
               </td>
-              <td className={`p-2 ${user.status === "Active" ? "text-green-400" : "text-red-400"}`}>
-                {user.status}
-              </td>
               <td className="p-2 flex space-x-3">
-              <button onClick={() => openEditModal(user)} className="text-blue-400 hover:text-blue-300" title="Edit User" aria-label={`Edit ${user.name}`}>
+                <button 
+                  onClick={() => openEditModal(user)} 
+                  className="text-blue-400 hover:text-blue-300" 
+                  title="Edit User" 
+                  aria-label={`Edit ${user.name}`}
+                >
                   <FiEdit size={18} />
                 </button>
 
-                <button onClick={() => toggleUserStatus(user.id)} className="text-yellow-400 hover:text-yellow-300"
-                  title={user.status === "Active" ? "Suspend User" : "Activate User"}
-                  aria-label={user.status === "Active" ? `Suspend ${user.name}` : `Activate ${user.name}`}
+                <button 
+                  onClick={() => handleLoginAsUserClick(user.id)} 
+                  className="text-green-400 hover:text-green-300" 
+                  title="Log In As User" 
+                  aria-label={`Log in as ${user.name}`}
                 >
-                  {user.status === "Active" ? <FiUserX size={18} /> : <FiLock size={18} />}
-                </button>
-
-                <button onClick={() => handleLoginAsUser(user.id)} className="text-green-400 hover:text-green-300" title="Log In As User" aria-label={`Log in as ${user.name}`}>
                   <FiLogIn size={18} />
                 </button>
 
-                <button onClick={() => handleDeleteClick(user)} className="text-red-500 hover:text-red-400" title="Delete User" aria-label={`Delete ${user.name}`}>
+                <button 
+                  onClick={() => handleDeleteClick(user)} 
+                  className="text-red-500 hover:text-red-400" 
+                  title="Delete User" 
+                  aria-label={`Delete ${user.name}`}
+                >
                   <FiTrash2 size={18} />
                 </button>
               </td>
@@ -223,13 +208,37 @@ const handleUpdateUser = async () => {
 
       {/* Edit User Modal */}
       {showModal && editUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-white">
             <h3 className="text-lg font-bold mb-4">Edit User</h3>
-            <input type="text" placeholder="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" />
-            <input type="text" placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" />
-            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" />
-            <input type="password" placeholder="New Password (Optional)" value={password} onChange={(e) => setPassword(e.target.value)} className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" />
+            <input 
+              type="text" 
+              placeholder="First Name" 
+              value={firstName} 
+              onChange={(e) => setFirstName(e.target.value)} 
+              className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" 
+            />
+            <input 
+              type="text" 
+              placeholder="Last Name" 
+              value={lastName} 
+              onChange={(e) => setLastName(e.target.value)} 
+              className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" 
+            />
+            <input 
+              type="email" 
+              placeholder="Email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" 
+            />
+            <input 
+              type="password" 
+              placeholder="New Password (Optional)" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              className="block w-full p-2 mb-2 bg-gray-700 rounded-md text-white" 
+            />
             <UserRoleDropdown role={role} onRoleChange={setRole} />
 
             <div className="flex justify-end space-x-3 mt-4">
@@ -252,11 +261,11 @@ const handleUpdateUser = async () => {
           <FiChevronLeft />
         </button>
         <span>
-          Page {currentPage} of {totalPages}
+          Page {currentPage} of {totalPages || 1}
         </span>
         <button
           onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
+          disabled={currentPage === totalPages || totalPages === 0}
           className="px-3 py-1 bg-gray-600 rounded-lg disabled:opacity-50"
           title="Next Page"
           aria-label="Go to next page"
@@ -267,7 +276,7 @@ const handleUpdateUser = async () => {
 
       {/* Delete Confirmation Modal */}
       {showModal && userToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-white">
             <p>Are you sure you want to delete {userToDelete.name}?</p>
             <div className="flex justify-end space-x-3 mt-4">

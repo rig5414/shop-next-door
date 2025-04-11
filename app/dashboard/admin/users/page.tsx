@@ -9,7 +9,6 @@ interface User {
   name: string;
   email: string;
   role: string;
-  status: "Active" | "Suspended";
 }
 
 const UsersPage = () => {
@@ -34,39 +33,23 @@ const UsersPage = () => {
     fetchUsers();
   }, []);
 
-  const toggleUserStatus = async (id: string) => {
-    const user = users.find((user) => user.id === id);
-    if (!user) return;
-
-    const updatedStatus = user.status === "Active" ? "Suspended" : "Active";
-
-    try {
-      const response = await fetch(`/api/users/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: updatedStatus }),
-      });
-
-      if (!response.ok) throw new Error(`Failed to update user status: ${response.statusText}`);
-
-      setUsers((prevUsers) =>
-        prevUsers.map((u) => (u.id === id ? { ...u, status: updatedStatus } : u))
-      );
-    } catch (err: any) {
-      setError(err.message || "Error updating user status.");
-    }
-  };
-
   const handleLoginAsUser = async (id: string) => {
     try {
-      const response = await fetch(`/api/users/${id}/login-as`, { method: "POST" });
+      // Use the impersonate endpoint instead of login-as
+      const response = await fetch(`/api/users/${id}/impersonate`, { 
+        method: "POST",
+        credentials: "include" // Important to include cookies
+      });
 
-      if (!response.ok) throw new Error(`Failed to log in as user: ${response.statusText}`);
+      if (!response.ok) throw new Error(`Failed to impersonate user: ${response.statusText}`);
 
       const data = await response.json();
-      window.location.href = data.redirectUrl || "/dashboard";
+      
+      // Open a new tab with the dashboard URL
+      // This will use the cookies set by the impersonate endpoint
+      window.open("/dashboard", "_blank");
     } catch (err: any) {
-      setError(err.message || "Error logging in as user.");
+      setError(err.message || "Error impersonating user.");
     }
   };
 
@@ -130,7 +113,6 @@ const UsersPage = () => {
         {users.length > 0 && (
           <UsersTable
             users={users}
-            toggleUserStatus={toggleUserStatus}
             handleLoginAsUser={handleLoginAsUser}
             updateUserRole={updateUserRole}
             deleteUser={deleteUser}

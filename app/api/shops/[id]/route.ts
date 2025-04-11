@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import { authOptions } from "../../../../lib/auth";
+import { getServerSession } from "next-auth";
 
 // GET: Fetch a single shop by ID
 export async function GET(req: Request, { params }: { params: { id: string } }) {
@@ -75,19 +77,29 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
     }
 }
 
-// DELETE: Remove a shop (only the vendor can delete)
+// DELETE: Remove a shop (admin or the shop's vendor can delete)
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
     try {
-        const { vendorId } = await req.json();
-
+        // Get the session to check if user is admin
+        const session = await getServerSession(authOptions);
+        
+        // Check if user is authenticated
+        if (!session || !session.user) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+        }
+        
+        // Get user role and ID
+        const userRole = session.user.role;
+        const userId = session.user.id;
+        
         // Validate shop exists
         const shop = await prisma.shop.findUnique({ where: { id: params.id } });
         if (!shop) {
             return NextResponse.json({ message: "Shop not found" }, { status: 404 });
         }
 
-        // Ensure the vendor is the shop owner
-        if (shop.vendorId !== vendorId) {
+        // Allow deletion if user is admin OR if user is the vendor who owns the shop
+        if (userRole !== "admin" && shop.vendorId !== userId) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
         }
 

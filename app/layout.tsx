@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ProfileProvider } from "../components/profile/ProfileContext";
+import ImpersonationBanner from "../components/ui/ImpersonationBanner";
 import { ReactNode } from "react";
 import SessionProviderWrapper from "../components/auth/SessionProviderWrapper";
 import { Metadata } from "next";
@@ -29,7 +30,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <SessionProviderWrapper> {/* Ensure SessionProvider is wrapped in a client component */}
-          <ProfileProvider>{children}</ProfileProvider>
+          <ProfileProvider>
+            <ImpersonationBanner />
+            {children}
+          </ProfileProvider>
         </SessionProviderWrapper>
       </body>
     </html>
