@@ -36,5 +36,5 @@ export async function middleware(req: NextRequest) {
 
 // Define paths to protect
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/api/:path*"],
 };
