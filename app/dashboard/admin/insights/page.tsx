@@ -1,7 +1,6 @@
 "use client";
 
 import DashboardLayout from "../../../../components/layout/DashboardLayout";
-import SalesChart from "../../../../components/dashboard/charts/SalesChart";
 import BestSellingChart from "../../../../components/dashboard/charts/BestSellingChart";
 import RevenueChart from "../../../../components/dashboard/charts/RevenueChart";
 import OrdersChart from "../../../../components/dashboard/charts/OrdersChart";
@@ -81,7 +80,6 @@ const Insights = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 print:grid-cols-2 print:gap-4">
           {[
-            { title: "Sales Performance", Component: SalesChart },
             { title: "Best-Selling Products", Component: BestSellingChart },
             { title: "Revenue Breakdown", Component: RevenueChart },
             { title: "Order Status", Component: OrdersChart },
