@@ -6,7 +6,17 @@ import OrdersOverview from "../../../../components/orders/OrdersOverview";
 import OrdersTable from "../../../../components/tables/OrdersTable";
 import OrdersExport from "../../../../components/orders/OrdersExport";
 import OrderDetailsDrawer from "../../../../components/orders/OrderDetailsDrawer";
-import { Order } from "../../../types";
+import { Order, OrderStatus } from "../../../types";
+
+// Helper function to normalize status case for comparison
+const normalizeStatus = (status: string): string => {
+  return status.toLowerCase()
+}
+
+// Helper function to count orders by normalized status
+const countOrdersByStatus = (orders: Order[], statusToMatch: string): number => {
+  return orders.filter((order) => normalizeStatus(order.status) === normalizeStatus(statusToMatch)).length
+}
 
 // Replace with real API endpoints
 const fetchOrders = async () => {
@@ -15,14 +25,6 @@ const fetchOrders = async () => {
     return await response.json();
   }
   throw new Error("Failed to fetch orders");
-};
-
-const fetchOrderStats = async () => {
-  const response = await fetch("/api/orders/stats");
-  if (response.ok) {
-    return await response.json();
-  }
-  throw new Error("Failed to fetch order statistics");
 };
 
 const OrdersPage = () => {
@@ -36,39 +38,47 @@ const OrdersPage = () => {
     avgOrderValue: 0,
   });
 
-  // Fetch orders and order stats on component mount
+  // Fetch orders and calculate stats on component mount
   useEffect(() => {
     const loadOrders = async () => {
       try {
         const fetchedOrders = await fetchOrders();
         setOrders(fetchedOrders);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    const loadOrderStats = async () => {
-      try {
-        const fetchedStats = await fetchOrderStats();
-        setOrderStats(fetchedStats);
+        
+        // Calculate stats from fetched orders
+        const totalCount = fetchedOrders.length;
+        const pendingCount = countOrdersByStatus(fetchedOrders, "pending");
+        const completedCount = countOrdersByStatus(fetchedOrders, "completed");
+        const cancelledCount = countOrdersByStatus(fetchedOrders, "cancelled");
+        
+        // Calculate average order value
+        const totalValue = fetchedOrders.reduce((sum: number, order: Order) => sum + Number(order.total), 0);
+        const avgValue = totalCount > 0 ? totalValue / totalCount : 0;
+        
+        setOrderStats({
+          totalOrders: totalCount,
+          pendingOrders: pendingCount,
+          completedOrders: completedCount,
+          cancelledOrders: cancelledCount,
+          avgOrderValue: avgValue,
+        });
       } catch (error) {
         console.error(error);
       }
     };
 
     loadOrders();
-    loadOrderStats();
   }, []);
 
   // Handle updating order status
-  const handleUpdateStatus = async (orderId: string, newStatus: string) => {
+  const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ id: orderId, status:normalizeStatus(newStatus) }),
       });
       if (response.ok) {
         setOrders((prevOrders) =>

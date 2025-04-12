@@ -45,7 +45,7 @@ const OrdersOverview: React.FC<OrdersOverviewProps> = ({
       {avgOrderValue !== undefined && (
         <div className="bg-purple-500 p-4 rounded-lg shadow-lg text-center col-span-2 md:col-span-1">
           <h3 className="text-lg font-semibold">Avg Order Value</h3>
-          <p className="text-2xl font-bold">${avgOrderValue.toFixed(2)}</p>
+          <p className="text-2xl font-bold">Ksh. {avgOrderValue.toFixed(2)}</p>
         </div>
       )}
     </div>
