@@ -151,6 +151,80 @@ const AdminDashboard = () => {
     }
   };
 
+  // Add functions needed by UsersTable
+  const handleLoginAsUser = async (id: string) => {
+    try {
+      const response = await fetch(`/api/auth/login-as/${id}`, {
+        method: "POST",
+        credentials: "include"
+      });
+
+      if (!response.ok) throw new Error("Failed to login as user");
+      
+      const data = await response.json();
+      // Open a new tab with the user's session
+      window.open(`/dashboard?token=${data.token}`, '_blank');
+    } catch (err) {
+      console.error("Failed to login as user", err);
+      alert("Error logging in as user");
+    }
+  };
+
+  const updateUserRole = async (id: string, role: string) => {
+    try {
+      const response = await fetch(`/api/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+        credentials: "include"
+      });
+
+      if (!response.ok) throw new Error("Failed to update user role");
+      
+      // Refresh all dashboard data
+      await fetchDashboardData();
+    } catch (err) {
+      console.error("Failed to update user role", err);
+      alert("Error updating user role");
+    }
+  };
+
+  const deleteUser = async (id: string) => {
+    try {
+      const response = await fetch(`/api/users/${id}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+
+      if (!response.ok) throw new Error("Failed to delete user");
+      
+      // Refresh all dashboard data
+      await fetchDashboardData();
+    } catch (err) {
+      console.error("Failed to delete user", err);
+      alert("Error deleting user");
+    }
+  };
+
+  const updateUserDetails = async (id: string, updatedUser: Partial<User>) => {
+    try {
+      const response = await fetch(`/api/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedUser),
+        credentials: "include"
+      });
+
+      if (!response.ok) throw new Error("Failed to update user details");
+      
+      // Refresh all dashboard data
+      await fetchDashboardData();
+    } catch (err) {
+      console.error("Failed to update user details", err);
+      alert("Error updating user details");
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout role="admin">
@@ -198,7 +272,13 @@ const AdminDashboard = () => {
             View All Users →
           </Link>
         </div>
-        <UsersTable users={users} />
+        <UsersTable 
+          users={users}
+          handleLoginAsUser={handleLoginAsUser}
+          updateUserRole={updateUserRole}
+          deleteUser={deleteUser}
+          updateUserDetails={updateUserDetails}
+        />
       </section>
 
       {/* Vendor Management Section */}

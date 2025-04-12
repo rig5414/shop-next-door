@@ -106,7 +106,7 @@ const Insights = () => {
           {insightsData.sales && <SalesDayCard title="Sales Overview" data={insightsData.sales} />}
         </div>
 
-        <InsightsDetails />
+        <InsightsDetails data={insightsData}/>
       </div>
 
       <style jsx global>{`

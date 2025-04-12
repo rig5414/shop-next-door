@@ -26,18 +26,54 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
 // PUT: Update user details
 export async function PUT(req: Request, context: { params: { id: string } }) {
-  const { id } = await context.params;
+  const { id } = context.params;
   try {
-    const { name, email } = await req.json();
+    const session = await getServerSession(authOptions);
+    
+    // Check authentication
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const updates = await req.json();
+    
+    // Create a sanitized update object
+    const allowedUpdates: any = {};
+    
+    // Handle regular fields
+    if (updates.name) allowedUpdates.name = updates.name;
+    if (updates.email) allowedUpdates.email = updates.email;
+    
+    // Handle role updates - only admins can change roles
+    if (updates.role) {
+      if (session.user.role !== 'admin') {
+        return NextResponse.json({ error: "Only admins can update roles" }, { status: 403 });
+      }
+      allowedUpdates.role = updates.role;
+    }
+    
+    // Handle password updates
+    if (updates.password) {
+      // Add password validation if needed
+      const hashedPassword = await bcrypt.hash(updates.password, 10);
+      allowedUpdates.password = hashedPassword;
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id },
-      data: { name, email },
-      select: { id: true, name: true, email: true }
+      data: allowedUpdates,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true
+      }
     });
 
     return NextResponse.json(updatedUser);
   } catch (error) {
+    console.error("Update error:", error);
     return NextResponse.json({ error: "Failed to update user", details: error }, { status: 500 });
   }
 }

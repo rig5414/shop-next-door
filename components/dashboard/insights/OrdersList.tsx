@@ -13,7 +13,7 @@ interface Order {
 
 interface OrdersListProps {
   title: string;
-  data: Order[] | undefined; // Allow undefined data
+  data: Order[] | undefined;
 }
 
 const OrdersList: React.FC<OrdersListProps> = ({ title, data }) => {
@@ -32,15 +32,27 @@ const OrdersList: React.FC<OrdersListProps> = ({ title, data }) => {
       <ul className="text-gray-300 space-y-2">
         {data.map((order, index) => (
           <li key={index} className="border-b border-gray-700 pb-2">
-            <span className="font-semibold">{order.customerName}</span> ordered{" "}
-            {order.items.map((item) => `${item.quantity}x ${item.productName}`).join(", ")}
-            <span
-              className={`ml-2 px-2 py-1 text-xs rounded ${getStatusClass(
-                order.status
-              )}`}
-            >
-              {order.status}
-            </span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
+              <span className="font-semibold">{order.customerName || "Unknown Customer"}</span>
+              <span
+                className={`mt-1 sm:mt-0 px-2 py-1 text-xs rounded ${getStatusClass(
+                  order.status
+                )}`}
+              >
+                {order.status}
+              </span>
+            </div>
+            <div>
+              ordered{" "}
+              {order.items && order.items.length > 0
+                ? order.items.map((item, i) => (
+                    <span key={i}>
+                      {i > 0 && ", "}
+                      {item.quantity}x {item.productName || "Product"}
+                    </span>
+                  ))
+                : "items"}
+            </div>
           </li>
         ))}
       </ul>
@@ -50,7 +62,7 @@ const OrdersList: React.FC<OrdersListProps> = ({ title, data }) => {
 
 // Function to dynamically apply styling based on order status
 const getStatusClass = (status: string) => {
-  switch (status) {
+  switch (status?.toLowerCase()) {
     case "pending":
       return "bg-yellow-500 text-gray-900";
     case "shipped":

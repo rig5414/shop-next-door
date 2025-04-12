@@ -24,8 +24,12 @@ const getPaymentStatusColor = (status: string | undefined) => {
   if (!status) return "bg-gray-500";
   
   const normalizedStatus = status.toLowerCase();
-  return normalizedStatus === "paid" ? "bg-green-600" : 
-         normalizedStatus === "pending" ? "bg-yellow-500" : 
+
+  const mappedStatus = 
+  normalizedStatus === "successful" ? "paid" : normalizedStatus;
+
+  return mappedStatus === "paid" ? "bg-green-600" : 
+         mappedStatus === "pending" ? "bg-yellow-500" : 
          "bg-red-600";
 }
 
@@ -96,33 +100,44 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders, onSelectOrder, onDele
             </tr>
           </thead>
           <tbody>
-            {sortedOrders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-800 transition">
-                <td className="border border-gray-700 px-4 py-2 text-blue-400 cursor-pointer">#{order.id}</td>
-                <td className="border border-gray-700 px-4 py-2">{order.customer.name}</td>
-                <td className="border border-gray-700 px-4 py-2">{order.shop.name}</td>
-                <td className="border border-gray-700 px-4 py-2">KSh {Number(order.total).toFixed(2)}</td>
-                <td className="border border-gray-700 px-4 py-2">
-                  <span className={`px-2 py-1 rounded text-sm ${getPaymentStatusColor(order.paymentStatus)}`}>
-                  {order.paymentStatus}
-                  </span>
-                </td>
-                <td className="border border-gray-700 px-4 py-2">${getOrderStatusColor(order.status)}</td>
-                <td className="border border-gray-700 px-4 py-2 flex gap-3">
-                  {/* View Order */}
-                  <button
-                    onClick={() => onSelectOrder(order)}
-                    className="text-blue-400 hover:text-blue-300"
-                    aria-label={`View order #${order.id}`}
-                    title="View Order"
-                  >
-                    <FaEye size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+           {sortedOrders.map((order) => {
+            console.log('Order object:', order);
+
+            const paymentStatus = (order as any).transaction?.status || 'N/A';
+            console.log('Payment Status value:', paymentStatus);
+    
+          return (
+           <tr key={order.id} className="hover:bg-gray-800 transition">
+           <td className="border border-gray-700 px-4 py-2 text-blue-400 cursor-pointer">#{order.id}</td>
+           <td className="border border-gray-700 px-4 py-2">{order.customer.name}</td>
+           <td className="border border-gray-700 px-4 py-2">{order.shop.name}</td>
+           <td className="border border-gray-700 px-4 py-2">KSh {Number(order.total).toFixed(2)}</td>
+           <td className="border border-gray-700 px-4 py-2">
+            <span className={`px-2 py-1 rounded text-sm ${getPaymentStatusColor(paymentStatus)}`}>
+             {paymentStatus || 'N/A'}
+            </span>
+           </td>
+           <td className="border border-gray-700 px-4 py-2">
+            <span className={`px-2 py-1 rounded text-sm ${getOrderStatusColor(order.status)}`}>
+             {order.status}
+            </span>
+           </td>
+           <td className="border border-gray-700 px-4 py-2 flex gap-3">
+          {/* View Order */}
+          <button
+            onClick={() => onSelectOrder(order)}
+            className="text-blue-400 hover:text-blue-300"
+            aria-label={`View order #${order.id}`}
+            title="View Order"
+          >
+            <FaEye size={16} />
+          </button>
+          </td>
+          </tr>
+         );
+         })}
+        </tbody>
+       </table>
       </div>
     </div>
   )

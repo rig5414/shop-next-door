@@ -4,6 +4,7 @@ interface Customer {
   name: string;
   purchases: number;
   shopName: string;
+  totalOrders?: number; // Added as it's in the interface
 }
 
 interface RepeatCustomersProps {
@@ -12,7 +13,7 @@ interface RepeatCustomersProps {
 
 const RepeatCustomers: React.FC<RepeatCustomersProps> = ({ data }) => {
   if (!Array.isArray(data) || data.length === 0) {
-    console.warn("No customer data found in insights"); // Corrected console message
+    console.warn("No customer data found in insights");
     return <div className="text-gray-400 text-sm">No repeat customers found.</div>;
   }
 
@@ -22,8 +23,13 @@ const RepeatCustomers: React.FC<RepeatCustomersProps> = ({ data }) => {
       <ul className="text-gray-300 space-y-2">
         {data.map((customer, index) => (
           <li key={index} className="border-b border-gray-700 pb-2">
-            <span className="font-semibold">{customer.name}</span> - {customer.purchases} purchases from{" "}
-            <span className="italic">{customer.shopName}</span>
+            {/* Add null checks and default values for each property */}
+            <span className="font-semibold">
+              {customer.name || "Unknown Customer"}
+            </span>{" "}
+            - {customer.purchases || 0} purchases from{" "}
+            <span className="italic">{customer.shopName || "Unknown Shop"}</span>
+            {customer.totalOrders ? ` (${customer.totalOrders} total orders)` : ""}
           </li>
         ))}
       </ul>

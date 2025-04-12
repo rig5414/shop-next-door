@@ -4,16 +4,26 @@ import React from "react";
 import { FaPrint, FaFileCsv } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import { Order } from "../../app/types";
+import { TransactionStatus } from "@prisma/client";
 
 interface OrdersExportProps {
   orders: Order[];
 }
 
 const OrdersExport: React.FC<OrdersExportProps> = ({ orders }) => {
+  // Helper function to safely format currency values
+  const formatCurrency = (value: any): string => {
+    // If value is a string, convert to number first
+    const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+    
+    // Check if it's a valid number
+    return !isNaN(numValue) ? numValue.toFixed(2) : '0.00';
+  };
+
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow || !printWindow.document) return; // Ensure it opens properly
-
+    
     printWindow.document.write(`
       <html>
       <head>
@@ -46,7 +56,7 @@ const OrdersExport: React.FC<OrdersExportProps> = ({ orders }) => {
                 <td>${order.id}</td>
                 <td>${order.customer?.name || "Unknown"}</td>
                 <td>${order.shop?.name || "Unknown"}</td>
-                <td>Ksh. ${order.total?.toFixed(2) || "0.00"}</td>
+                <td>Ksh. ${formatCurrency(order.total)}</td>
                 <td>${order.paymentStatus || "N/A"}</td>
                 <td>${order.status || "Unknown"}</td>
               </tr>
@@ -58,7 +68,7 @@ const OrdersExport: React.FC<OrdersExportProps> = ({ orders }) => {
       </body>
       </html>
     `);
-
+    
     printWindow.document.close();
     printWindow.print();
   };
@@ -69,10 +79,10 @@ const OrdersExport: React.FC<OrdersExportProps> = ({ orders }) => {
       orders
         .map(
           (order) =>
-            `"${order.id}","${order.customer?.name || "Unknown"}","${order.shop?.name || "Unknown"}","Ksh. ${order.total?.toFixed(2) || "0.00"}","${order.paymentStatus || "N/A"}","${order.status || "Unknown"}"`
+            `"${order.id}","${order.customer?.name || "Unknown"}","${order.shop?.name || "Unknown"}","Ksh. ${formatCurrency(order.total)}","${order.paymentStatus ? TransactionStatus[order.paymentStatus] : "N/A"}","${order.status || "Unknown"}"`
         )
         .join("\n");
-
+    
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, "orders_report.csv");
   };
@@ -86,7 +96,7 @@ const OrdersExport: React.FC<OrdersExportProps> = ({ orders }) => {
         <FaPrint />
         Print
       </button>
-
+      
       <button
         onClick={handleExportCSV}
         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition"

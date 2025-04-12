@@ -8,7 +8,7 @@ interface SalesDayData {
 
 interface SalesDayCardProps {
   title: string;
-  data?: SalesDayData; // Optional to handle undefined/null
+  data?: SalesDayData;
 }
 
 const SalesDayCard: React.FC<SalesDayCardProps> = ({ title, data }) => {
@@ -23,20 +23,28 @@ const SalesDayCard: React.FC<SalesDayCardProps> = ({ title, data }) => {
   return (
     <div className="bg-gray-800 p-4 rounded-lg shadow-md">
       <h4 className="text-lg font-semibold text-white mb-3">
-        {title}: <span className="text-yellow-400">{data.day}</span>
+        {title && title !== "Sales on undefined" 
+          ? title 
+          : "Daily Sales"}: <span className="text-yellow-400">{data.day || "N/A"}</span>
       </h4>
-      <p className="text-gray-300">
-        <span className="font-semibold text-white">Products Sold:</span> {data.products}
-      </p>
-      <p className="text-gray-300">
-        <span className="font-semibold text-white">Quantity:</span> {data.quantity}
-      </p>
-      <p className="text-gray-300">
-        <span className="font-semibold text-white">Shop:</span> {data.shop}
-      </p>
-      <p className="text-gray-300">
-        <span className="font-semibold text-white">Transaction Time:</span> {data.time}
-      </p>
+      <div className="space-y-2">
+        <p className="text-gray-300">
+          <span className="font-semibold text-white">Products Sold:</span>{" "}
+          {data.products && data.products !== "undefined" ? data.products : "0"}
+        </p>
+        <p className="text-gray-300">
+          <span className="font-semibold text-white">Quantity:</span>{" "}
+          {data.quantity || 0}
+        </p>
+        <p className="text-gray-300">
+          <span className="font-semibold text-white">Shop:</span>{" "}
+          {data.shop || "N/A"}
+        </p>
+        <p className="text-gray-300">
+          <span className="font-semibold text-white">Transaction Time:</span>{" "}
+          {data.time || "N/A"}
+        </p>
+      </div>
     </div>
   );
 };

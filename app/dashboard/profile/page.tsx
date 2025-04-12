@@ -72,8 +72,39 @@ const ProfilePage = () => {
   }, [session, status, router]);
 
   // Function to update profile state correctly
-  const handleProfileUpdate = (updatedData: Partial<ProfileData>) => {
-    setProfileData((prev) => (prev ? { ...prev, ...updatedData } : prev));
+  const handleProfileUpdate = async (updatedData: Partial<ProfileData>) => {
+    try {
+      if (!session?.user?.id) return;
+
+      const response = await fetch(`/api/users/${session.user.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update profile');
+      }
+
+      const updatedProfile = await response.json();
+      
+      // Update local state with the new data
+      setProfileData(prev => prev ? {
+        ...prev,
+        firstName: updatedProfile.firstName || prev.firstName,
+        lastName: updatedProfile.lastName || prev.lastName,
+        email: updatedProfile.email || prev.email,
+        profilePic: updatedProfile.profilePic || prev.profilePic,
+      } : prev);
+
+      // Optionally show success message
+      // You can add a toast/notification here if you want
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
+    }
   };
 
   if (loading || !role) return (

@@ -55,7 +55,7 @@ const UsersPage = () => {
 
   const updateUserRole = async (id: string, newRole: string) => {
     try {
-      const response = await fetch(`/api/users/${id}/role`, {
+      const response = await fetch(`/api/users/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: newRole }),

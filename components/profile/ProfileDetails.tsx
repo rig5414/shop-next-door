@@ -2,13 +2,15 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 
+interface ProfileData {
+  firstName?: string;
+  lastName?: string;
+  email: string;
+}
+
 interface ProfileDetailsProps {
-  profileData: {
-    firstName?: string;
-    lastName?: string;
-    email: string;
-  };
-  onProfileUpdate: (updatedData: Partial<{ firstName: string; lastName: string; email: string }>) => void;
+  profileData: ProfileData;
+  onProfileUpdate: (updatedData: Partial<ProfileData>) => Promise<void>;
 }
 
 const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileUpdate }) => {
@@ -68,7 +70,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || ""
 
-      onProfileUpdate({ firstName, lastName, email: data.email, });
+      await onProfileUpdate({ firstName, lastName, email: data.email, });
 
       await fetch (`/api/users/${session.user.id}`, {cache: "no-store", signal: signal});
     }  catch (err) {

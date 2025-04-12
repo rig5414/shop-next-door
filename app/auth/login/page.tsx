@@ -10,36 +10,45 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
-    const result = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
 
-    if (result?.error) {
-      setError("Invalid email or password");
-      return;
-    }
+      if (result?.error) {
+        setError("Invalid email or password");
+        setIsLoading(false);
+        return;
+      }
 
-    // Fetch session to check user role after login
-    const res = await fetch("/api/auth/session");
-    const session = await res.json();
+      // Fetch session to check user role after login
+      const res = await fetch("/api/auth/session");
+      const session = await res.json();
 
-    if (session?.user?.role === "customer") {
-      router.push("/dashboard/customer");
-    } else if (session?.user?.role === "vendor") {
-      router.push("/dashboard/vendor");
-    } else if (session?.user?.role === "admin") {
-      router.push("/dashboard/admin");
-    } else {
-      setError("Role not assigned");
+      if (session?.user?.role === "customer") {
+        router.push("/dashboard/customer");
+      } else if (session?.user?.role === "vendor") {
+        router.push("/dashboard/vendor");
+      } else if (session?.user?.role === "admin") {
+        router.push("/dashboard/admin");
+      } else {
+        setError("Role not assigned");
+        setIsLoading(false); // Add this line
+      }
+    } catch (error) {
+      setError("An error occurred during login");
+      setIsLoading(false); // Add this line
     }
   };
 
@@ -86,9 +95,14 @@ export default function Login() {
           {/* Login Button */}
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-900 cursor-pointer transition-all"
+            disabled={isLoading}
+            className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-900 cursor-pointer transition-all flex items-center justify-center"
           >
-            Login
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+            ) : (
+              'Login'
+            )}
           </button>
         </form>
 

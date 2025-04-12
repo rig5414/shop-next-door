@@ -73,7 +73,7 @@ const OrdersPage = () => {
   // Handle updating order status
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}`, {
+      const response = await fetch("/api/orders", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -83,11 +83,13 @@ const OrdersPage = () => {
       if (response.ok) {
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
-            order.id === orderId ? { ...order, orderStatus: newStatus } : order
+            order.id === orderId ? { ...order, status: newStatus } : order
           )
         );
         console.log(`Order ${orderId} status updated to ${newStatus}`);
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Update faled:", errorData);
         throw new Error("Failed to update order status");
       }
     } catch (error) {
