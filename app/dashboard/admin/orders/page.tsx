@@ -121,17 +121,53 @@ const OrdersPage = () => {
   // Handle deleting an order
   const handleDeleteOrder = async (orderId: string) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}`, {
+      const response = await fetch(`/api/orders`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          id: orderId,
+          role: "admin" // Add role to match API expectations
+        }),
       });
-      if (response.ok) {
-        setOrders((prevOrders) => prevOrders.filter((order) => order.id !== orderId));
-        console.log(`Order ${orderId} deleted`);
-      } else {
-        throw new Error("Failed to delete order");
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete order");
       }
+
+      // Update local state
+      setOrders((prevOrders) => {
+        const filteredOrders = prevOrders.filter((order) => order.id !== orderId);
+        
+        // Update stats after deletion
+        const totalCount = filteredOrders.length;
+        const pendingCount = countOrdersByStatus(filteredOrders, "pending");
+        const completedCount = countOrdersByStatus(filteredOrders, "completed");
+        const cancelledCount = countOrdersByStatus(filteredOrders, "cancelled");
+        
+        // Recalculate average order value
+        const totalValue = filteredOrders.reduce((sum, order) => sum + Number(order.total), 0);
+        const avgValue = totalCount > 0 ? totalValue / totalCount : 0;
+        
+        setOrderStats({
+          totalOrders: totalCount,
+          pendingOrders: pendingCount,
+          completedOrders: completedCount,
+          cancelledOrders: cancelledCount,
+          avgOrderValue: avgValue,
+        });
+
+        return filteredOrders;
+      });
+
+      // Close drawer after successful deletion
+      setSelectedOrder(null);
+
     } catch (error) {
-      console.error(error);
+      console.error("Delete order error:", error);
+      // You might want to show an error toast/notification here
     }
   };
 
