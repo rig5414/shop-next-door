@@ -6,9 +6,9 @@ import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 
 // GET: Fetch a single user by ID
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const  id = params.id;
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
+    const id = await params.id;
     const user = await prisma.user.findUnique({
       where: { id },
       select: { id: true, name: true, email: true, role: true, createdAt: true }
@@ -18,7 +18,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(user, {headers: { "Cache-Control": "no-store"}});
+    return NextResponse.json(user, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch user", details: error }, { status: 500 });
   }

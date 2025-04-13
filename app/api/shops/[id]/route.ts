@@ -4,15 +4,11 @@ import { authOptions } from "../../../../lib/auth";
 import { getServerSession } from "next-auth";
 
 // GET: Fetch a single shop by ID
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
     try {
-        const { id } = await params;
-        console.log("idreceived: ",id);
-        if (!id) {
-            return NextResponse.json({ error: "Shop ID is required"}, { status: 400 });
-        }
+        const id = await params.id;
         const shop = await prisma.shop.findUnique({
-            where: { id: id },
+            where: { id },
             include: {
                 vendor: {
                     select: { id: true, name: true, email: true },
@@ -30,7 +26,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
         return NextResponse.json({ message: "Error fetching shop", error }, { status: 500 });
     }
 }
-
 
 // PUT: Update a shop (only the vendor can update)
 export async function PUT(req: Request, context: { params: { id: string } }) {

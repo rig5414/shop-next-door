@@ -32,31 +32,23 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 // PUT: Update a product by ID
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+    request: Request,
+    { params }: { params: { id: string } }
+) {
     try {
-        const body = await req.json();
-        const { price, stock } = body; // Updated fields
-
-        if (price === undefined || stock === undefined) {
-            return NextResponse.json({ error: "Missing required fields (price, stock)" }, { status: 400 });
-        }
-
-        const existingProduct = await prisma.product.findUnique({ where: { id: params.id } });
-
-        if (!existingProduct) {
-            return NextResponse.json({ error: "Product not found" }, { status: 404 });
-        }
+        const { price, stock } = await request.json();
+        const id = await params.id;  // Await the params
 
         const updatedProduct = await prisma.product.update({
-            where: { id: params.id },
+            where: { id },  // Use awaited id
             data: { price, stock },
         });
 
         return NextResponse.json(updatedProduct);
-    } catch (error: unknown) {
-        console.error("PUT /api/products/:id error:", error);
+    } catch (error) {
         return NextResponse.json(
-            { error: "Failed to update product", details: error instanceof Error ? error.message : String(error) },
+            { error: "Failed to update product" },
             { status: 500 }
         );
     }

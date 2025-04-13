@@ -2,26 +2,43 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import {
-    Chart,
     Chart as ChartJS,
-    BarElement,
     CategoryScale,
     LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
     Title,
     Tooltip,
     Legend,
-    LineElement,
-    PointElement,
     Filler,
-    Scale,
-    CoreScaleOptions,
-    Tick
+    BarController,
+    LineController
 } from "chart.js";
+import { Chart } from "chart.js";
 import { useRouter } from "next/navigation";
 import { fetchInsights } from "../../../lib/fetchInsights";
 
 // Register Chart.js components
-ChartJS.register(BarElement, LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    BarController,  // Add this
+    LineController, // Add this
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+);
+
+interface Sale {
+    date: string;
+    total: number;
+    status: string;
+}
 
 interface SalesData {
     labels: string[];
@@ -39,7 +56,6 @@ interface SalesData {
     }[];
 }
 
-// Utility function to combine class names (replacement for "@/lib/utils")
 const cn = (...classes: string[]): string => {
     return classes.filter(Boolean).join(' ');
 };
@@ -50,16 +66,19 @@ const SalesChart = ({ className = "" }) => {
         labels: [],
         datasets: [],
     });
-    const [fetchedData, setFetchedData] = useState<any>(null);
+    const [fetchedData, setFetchedData] = useState<{ sales: Sale[] } | null>(null);
     const chartRef = useRef<HTMLCanvasElement | null>(null);
     const chartInstance = useRef<Chart | null>(null);
     const [chartInitialized, setChartInitialized] = useState(false);
-
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const insights = await fetchInsights();
+                if (!insights || !insights.sales) {
+                    console.error("No sales data in insights:", insights);
+                    return;
+                }
                 setFetchedData(insights);
             } catch (error) {
                 console.error("Error fetching sales data:", error);
@@ -69,63 +88,55 @@ const SalesChart = ({ className = "" }) => {
     }, []);
 
     useEffect(() => {
-        if (!fetchedData) return;
+        if (!fetchedData?.sales) return;
 
-        let labels: string[] = [];
-        let totalInvoiced: number[] = [];
-        let totalCashedIn: number[] = [];
-        let totalCashedInPercent: number[] = [];
+        const labels = fetchedData.sales.map((sale: Sale) => {
+            const date = new Date(sale.date);
+            return isNaN(date.getTime()) 
+                ? "Invalid Date" 
+                : date.toLocaleDateString("en-US", { month: 'short', year: 'numeric' });
+        });
 
-        if (fetchedData.sales && Array.isArray(fetchedData.sales)) {
-            labels = fetchedData.sales.map((sale: any) => {
-                const date = new Date(sale.date);
-                return isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleDateString("en-US", { month: 'short', year: 'numeric' });
-            });
-            totalInvoiced = fetchedData.sales.map((sale: any) => sale.total);
-            totalCashedIn = fetchedData.sales.map((sale: any) => {
-                return sale.total * 0.8;
-            });
-            totalCashedInPercent = totalInvoiced.map((invoiced, index) => {
-                return totalCashedIn[index] / invoiced * 100;
-            });
-        } else {
-            labels = [];
-            totalInvoiced = [];
-            totalCashedIn = [];
-            totalCashedInPercent = [];
-        }
+        const totalSales = fetchedData.sales.map((sale: Sale) => Number(sale.total) || 0);
+        const completedSales = fetchedData.sales.map((sale: Sale) => 
+            sale.status === 'completed' ? Number(sale.total) : 0
+        );
+        const completionRate = totalSales.map((total: number, index: number) => 
+            total > 0 ? (completedSales[index] / total) * 100 : 0
+        );
 
         setSalesData({
             labels,
             datasets: [
                 {
                     type: "bar",
-                    label: "Total Invoiced (€)",
-                    data: totalInvoiced,
-                    backgroundColor: '#60a5fa',
+                    label: "Total Sales (KSh)",
+                    data: totalSales,
+                    backgroundColor: 'rgba(96, 165, 250, 0.7)',
                     borderColor: '#60a5fa',
-                    borderWidth: 2,
+                    borderWidth: 1,
                     yAxisID: 'y-left'
                 },
                 {
                     type: "bar",
-                    label: "Total Cashed in (€)",
-                    data: totalCashedIn,
-                    backgroundColor: '#10b981',
+                    label: "Completed Sales (KSh)",
+                    data: completedSales,
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
                     borderColor: '#10b981',
-                    borderWidth: 2,
+                    borderWidth: 1,
                     yAxisID: 'y-left'
                 },
                 {
                     type: "line",
-                    label: "Total Cashed in (%)",
-                    data: totalCashedInPercent,
+                    label: "Completion Rate (%)",
+                    data: completionRate,
                     borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
                     borderWidth: 2,
-                    fill: false,
+                    fill: true,
                     tension: 0.4,
                     yAxisID: 'y-right',
-                    pointRadius: 0
+                    pointRadius: 4
                 }
             ],
         });
@@ -133,122 +144,121 @@ const SalesChart = ({ className = "" }) => {
 
     useEffect(() => {
         const chartCtx = chartRef.current;
-        if (chartCtx && salesData) {
-            if (!chartInitialized) {
-                try {
-                    chartInstance.current = new Chart(chartCtx, {
-                        type: 'bar',
-                        data: salesData,
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                title: {
-                                    display: true,
-                                    text: 'Sales History',
-                                    color: '#fff',
-                                    font: {
-                                        size: 16
-                                    }
-                                },
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        color: '#fff',
-                                        usePointStyle: true,
-                                        font: {
-                                            size: 12
-                                        }
-                                    },
-                                },
-                                tooltip: {
-                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                                    titleColor: '#fff',
-                                    bodyColor: '#fff',
-                                    borderColor: '#4a5568',
-                                    borderWidth: 1,
-                                    displayColors: true,
-                                    callbacks: {
-                                        label: (context) => {
-                                            let label = context.dataset.label || '';
-                                            if (label) {
-                                                label += ': ';
-                                            }
-                                            if (context.parsed.y !== null) {
-                                                const value = context.parsed.y;
-                                                label += context.dataset.label?.includes('%')
-                                                    ? (typeof value === 'number' ? value.toFixed(2) + '%' : '0%')
-                                                    : (typeof value === 'number'
-                                                        ? value.toLocaleString('en-US', {
-                                                            style: 'currency',
-                                                            currency: 'EUR'
-                                                        })
-                                                        : '0');
-                                            }
-                                            return label;
-                                        }
-                                    }
-                                }
+        if (!chartCtx || !salesData.labels.length) return;
+
+        if (chartInstance.current) {
+            chartInstance.current.destroy();
+        }
+
+        try {
+            chartInstance.current = new Chart(chartCtx, {
+                type: 'bar',
+                data: salesData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Sales History',
+                            color: '#fff',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
                             },
-                            scales: {
-                                x: {
-                                    type: 'category',
-                                    ticks: {
-                                        color: '#fff',
-                                        font: {
-                                            size: 12
-                                        }
-                                    },
-                                    grid: {
-                                        color: 'rgba(255,255,255,0.1)'
-                                    }
-                                },
-                                'y-left': {
-                                    position: 'left',
-                                    ticks: {
-                                        color: '#fff',
-                                        callback: (value) =>
-                                            typeof value === 'number'
-                                                ? value.toLocaleString('en-US', {
-                                                    style: 'currency',
-                                                    currency: 'EUR',
-                                                })
-                                                : '',
-                                        font: {
-                                            size: 12
-                                        }
-                                    },
-                                    grid: {
-                                        color: 'rgba(255,255,255,0.1)'
-                                    }
-                                },
-                                'y-right': {
-                                    position: 'right',
-                                    ticks: {
-                                        color: '#fff',
-                                        callback: (value) =>
-                                            typeof value === 'number' ? value.toFixed(0) + '%' : '',
-                                        font: {
-                                            size: 12
-                                        }
-                                    },
-                                    grid: {
-                                        color: 'rgba(255,255,255,0.1)'
-                                    },
-                                    display: true
+                            padding: 20
+                        },
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#fff',
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12
                                 }
                             },
                         },
-                    });
-                    setChartInitialized(true);
-                }
-                catch (e) {
-                    console.error("CHART INITIALIZATION ERROR", e);
-                }
-            } else if (chartInstance.current) {
-                chartInstance.current.data = salesData;
-                chartInstance.current.update();
-            }
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#4a5568',
+                            borderWidth: 1,
+                            displayColors: true,
+                            callbacks: {
+                                label: (context) => {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        const value = context.parsed.y;
+                                        label += context.dataset.label?.includes('%')
+                                            ? `${value.toFixed(1)}%`
+                                            : `KSh ${value.toLocaleString()}`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#fff',
+                                font: {
+                                    size: 12
+                                },
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: {
+                                display: false
+                            }
+                        },
+                        'y-left': {
+                            position: 'left',
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#fff',
+                                callback: (value) =>
+                                    typeof value === 'number'
+                                        ? `KSh ${value.toLocaleString()}`
+                                        : '',
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            }
+                        },
+                        'y-right': {
+                            position: 'right',
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#fff',
+                                callback: (value) =>
+                                    typeof value === 'number' ? value.toFixed(0) + '%' : '',
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                },
+            });
+            setChartInitialized(true);
+        } catch (error) {
+            console.error("Chart initialization error:", error);
         }
 
         return () => {
@@ -257,24 +267,25 @@ const SalesChart = ({ className = "" }) => {
                 chartInstance.current = null;
             }
         };
-    }, [salesData, chartInitialized]);
-
+    }, [salesData]);
 
     return (
         <div className={cn(
-            "bg-gray-800 p-6 rounded-xl shadow-lg",
-            "cursor-pointer hover:shadow-xl transition-shadow",
+            "bg-gray-800 p-6 rounded-lg shadow-md", 
+            "hover:opacity-80 transition-opacity",
             className
         )}>
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-white text-2xl font-semibold">Sales History</h2>
+                <h2 className="text-white text-xl font-semibold mb-3">Sales History</h2>
             </div>
-            <div className="h-[350px]">
-                <canvas ref={chartRef} />
+            <div className="h-[300px] w-full relative"> 
+                <canvas ref={chartRef} className="w-full h-full" />
+                {salesData.labels.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <p className="text-gray-400 text-sm">Loading...</p>
+                    </div>
+                )}
             </div>
-            {salesData.labels.length === 0 && (
-                <p className="text-gray-400 text-sm text-center mt-4">No sales data available.</p>
-            )}
         </div>
     );
 };

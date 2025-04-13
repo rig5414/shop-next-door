@@ -23,6 +23,14 @@ export default function PaymentForm({ totalAmount, onClose, customerId, shopId, 
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
 
+  // Phone number formatter function
+  const formatPhoneNumber = (phone: string): string => {
+    // Remove any non-digit characters
+    const cleaned = phone.replace(/\D/g, '')
+    // Remove leading 0 if present and add 254
+    return cleaned.replace(/^0/, '254')
+  }
+
   const createOrder = async () => {
     try {
       const response = await fetch("/api/orders", {
@@ -34,6 +42,9 @@ export default function PaymentForm({ totalAmount, onClose, customerId, shopId, 
           customerId,
           shopId,
           items,
+          paymentMethod,
+          phoneNumber: paymentMethod !== "cod" ? formatPhoneNumber(phoneNumber) : null,
+          status: "pending"
         }),
       })
 
@@ -44,10 +55,31 @@ export default function PaymentForm({ totalAmount, onClose, customerId, shopId, 
 
       return await response.json()
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(error.message)
+      throw new Error(error instanceof Error ? error.message : "An unknown error occurred")
+    }
+  }
+
+  const initiateMpesaPayment = async (formattedPhone: string, orderId: string) => {
+    try {
+      const response = await fetch('/api/mpesa', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phoneNumber: formattedPhone,
+          amount: totalAmount,
+          orderId,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to initiate M-Pesa payment')
       }
-      throw new Error("An unknown error occurred")
+
+      return await response.json()
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Payment failed')
     }
   }
 
@@ -66,26 +98,34 @@ export default function PaymentForm({ totalAmount, onClose, customerId, shopId, 
     setError("")
 
     try {
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      // Create order first
+      const order = await createOrder()
+      console.log("Order created:", order)
 
-      if (paymentMethod === "cod" || Math.random() > 0.2) {
-        // Simulating success 80% of the time
-        // Create the order in the database
-        const order = await createOrder()
-        console.log("Order created:", order)
+      if (paymentMethod === "mpesa") {
+        // Format phone number and initiate STK push
+        const formattedPhone = formatPhoneNumber(phoneNumber)
+        const mpesaResponse = await initiateMpesaPayment(formattedPhone, order.id)
+        
+        if (mpesaResponse.success) {
+          setSuccess(true)
+          setTimeout(() => {
+            window.location.href = "/dashboard/customer/orders"
+          }, 500)
+        } else {
+          throw new Error(mpesaResponse.error || 'Payment failed')
+        }
+      } else if (paymentMethod === "airtel") {
+        // Implement Airtel Money logic here
+        throw new Error("Airtel Money integration coming soon")
+      } else if (paymentMethod === "cod") {
         setSuccess(true)
-
-        // Redirect after a short delay to ensure the user sees the success state
         setTimeout(() => {
           window.location.href = "/dashboard/customer/orders"
         }, 500)
-      } else {
-        setError("Payment failed. Please try again.")
-        setLoading(false)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create order")
+      setError(err instanceof Error ? err.message : "Failed to process payment")
       setLoading(false)
     }
   }

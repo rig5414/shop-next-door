@@ -5,6 +5,7 @@ import BestSellingChart from "../../../../components/dashboard/charts/BestSellin
 import RevenueChart from "../../../../components/dashboard/charts/RevenueChart";
 import OrdersChart from "../../../../components/dashboard/charts/OrdersChart";
 import CustomerFrequencyChart from "../../../../components/dashboard/charts/CustomerFrequencyChart";
+import SalesChart from "../../../../components/dashboard/charts/SalesChart";
 import InsightsDetails from "../../../../components/dashboard/insights/InsightDetails";
 import OrdersList from "../../../../components/dashboard/insights/OrdersList";
 import RepeatCustomers from "../../../../components/dashboard/insights/RepeatCustomer";
@@ -81,6 +82,7 @@ const Insights = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 print:grid-cols-2 print:gap-4">
           {[
             { title: "Best-Selling Products", Component: BestSellingChart },
+            { title: "Sales Overview", Component: SalesChart },
             { title: "Revenue Breakdown", Component: RevenueChart },
             { title: "Order Status", Component: OrdersChart },
             { title: "Customer Purchase Frequency", Component: CustomerFrequencyChart },

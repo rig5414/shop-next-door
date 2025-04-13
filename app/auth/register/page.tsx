@@ -57,98 +57,145 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-30 blur-2xl"></div>
-      <div className="neon-card relative p-6 rounded-lg shadow-lg w-96">
-        <h1 className="text-2xl font-bold text-center mb-4">Create an Account</h1>
+    <div className="flex items-center justify-center min-h-screen bg-gray-950 text-white">
+      {/* Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-30 blur-[150px]"></div>
 
-        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+      <div className="container mx-auto px-4 max-w-7xl flex flex-col md:flex-row items-center justify-center gap-12">
+        {/* Instructions Section */}
+        <div className="relative z-10 max-w-md md:w-2/5 space-y-6 p-6">
+          <h1 className="text-4xl font-extrabold mb-6 neon-text">
+            Get Started with Shop Next Door 🏪
+          </h1>
 
-        <form className="flex flex-col gap-4" onSubmit={handleRegister}>
-          {/* First Name & Last Name */}
-          <div className="flex gap-4">
-            <input
-              type="text"
-              placeholder="First Name"
-              className="p-2 w-1/2 border rounded bg-gray-800 text-white placeholder-gray-400"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Last Name"
-              className="p-2 w-1/2 border rounded bg-gray-800 text-white placeholder-gray-400"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-            />
+          <div className="space-y-6">
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                1
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Create Your Account</h3>
+                <p className="text-gray-300">Join our community of local vendors and customers. Discover and shop from nearby stores.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
+                2
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Explore Features</h3>
+                <p className="text-gray-300">Access wide variety of products, fast delivery, and secure payment options.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-pink-600 flex items-center justify-center">
+                3
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Start Shopping</h3>
+                <p className="text-gray-300">Support small businesses while enjoying a seamless shopping experience.</p>
+              </div>
+            </div>
           </div>
+        </div>
 
-          {/* Email */}
-          <input
-            type="email"
-            placeholder="Email"
-            className="p-2 border rounded bg-gray-800 text-white placeholder-gray-400"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+        {/* Registration Form */}
+        <div className="neon-card relative p-8 rounded-lg shadow-lg w-full md:w-2/5 max-w-md">
+          <h1 className="text-2xl font-bold text-center mb-4">Create an Account</h1>
 
-          {/* Password */}
-          <div className="relative">
+          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+
+          <form className="flex flex-col gap-4" onSubmit={handleRegister}>
+            {/* First Name & Last Name */}
+            <div className="flex gap-4">
+              <input
+                type="text"
+                placeholder="First Name"
+                className="p-2 w-1/2 border rounded bg-gray-800 text-white placeholder-gray-400"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+              <input
+                type="text"
+                placeholder="Last Name"
+                className="p-2 w-1/2 border rounded bg-gray-800 text-white placeholder-gray-400"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
+
+            {/* Email */}
             <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              className="p-2 w-full border rounded bg-gray-800 text-white placeholder-gray-400"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              type="email"
+              placeholder="Email"
+              className="p-2 border rounded bg-gray-800 text-white placeholder-gray-400"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
+
+            {/* Password */}
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                className="p-2 w-full border rounded bg-gray-800 text-white placeholder-gray-400"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-3 text-gray-400 hover:text-white"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
+
+            {/* Confirm Password */}
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm Password"
+                className="p-2 w-full border rounded bg-gray-800 text-white placeholder-gray-400"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-3 text-gray-400 hover:text-white"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
+
+            {/* Submit Button */}
             <button
-              type="button"
-              className="absolute right-3 top-3 text-gray-400 hover:text-white"
-              onClick={() => setShowPassword(!showPassword)}
+              type="submit"
+              className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-900 hover:scale-105 cursor-pointer transition-all"
+              disabled={loading}
             >
-              {showPassword ? <FiEyeOff /> : <FiEye />}
+              {loading ? "Signing Up..." : "Sign Up"}
             </button>
-          </div>
+          </form>
 
-          {/* Confirm Password */}
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm Password"
-              className="p-2 w-full border rounded bg-gray-800 text-white placeholder-gray-400"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-3 text-gray-400 hover:text-white"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
-            </button>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-900 hover:scale-105 cursor-pointer transition-all"
-            disabled={loading}
-          >
-            {loading ? "Signing Up..." : "Sign Up"}
-          </button>
-        </form>
-
-        {/* Login Link */}
-        <p className="text-sm text-center mt-4 text-gray-400">
-          Already have an account?{" "}
-          <Link href="/auth/login" className="text-blue-400 hover:text-blue-500 transition-all">
-            Login
-          </Link>
-        </p>
+          {/* Login Link */}
+          <p className="text-sm text-center mt-4 text-gray-400">
+            Already have an account?{" "}
+            <Link href="/auth/login" className="text-blue-400 hover:text-blue-500 transition-all">
+              Login
+            </Link>
+          </p>
+        </div>
       </div>
 
-      {/* Neon Glow Effect */}
+      {/* Enhanced Styles */}
       <style jsx>{`
+        .neon-text {
+          text-shadow: 0 0 10px rgba(0, 174, 255, 0.8);
+        }
         .neon-card {
           background: rgba(10, 25, 47, 0.9);
           box-shadow: 0 0 15px rgba(0, 174, 255, 0.5);

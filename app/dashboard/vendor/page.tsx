@@ -35,6 +35,11 @@ interface ShopProduct {
   catalogId?: string
 }
 
+// Add this helper function at the top (like in orders page)
+const normalizeStatus = (status: string): string => {
+  return status.toLowerCase();
+};
+
 const VendorDashboard = () => {
   const { data: session } = useSession()
   const { profile } = useProfile()
@@ -167,75 +172,94 @@ const VendorDashboard = () => {
 
   const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
-      // Update status on the server
+      // Update status on the server first (matching orders page implementation)
       const response = await fetch(`/api/orders`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id: orderId, status: newStatus }),
-      })
+        body: JSON.stringify({ 
+          id: orderId, 
+          status: normalizeStatus(newStatus) // Normalize status before sending
+        }),
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to update order status")
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update order status");
       }
 
-      // Update local state
+      // Update local state and stats
       setOrders((prevOrders) =>
-        prevOrders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)),
-      )
-
-      // Recalculate stats if needed
-      if (newStatus === "Completed" || newStatus === "Pending") {
-        const updatedOrders = orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order))
-
-        const totalSales = updatedOrders.reduce((sum: number, order: Order) => {
-          return sum + (order.status === "Completed" ? Number(order.total) || 0 : 0)
-        }, 0)
-
-        const pendingOrders = updatedOrders.filter((order: Order) => order.status === "Pending").length
-
-        setStats({
-          ...stats,
-          totalSales,
-          pendingOrders,
+        prevOrders.map((order) => {
+          if (order.id === orderId) {
+            // Update stats when changing from/to pending status
+            if (order.status.toLowerCase() === "pending") {
+              setStats(prev => ({
+                ...prev,
+                pendingOrders: prev.pendingOrders - 1
+              }));
+            }
+            if (newStatus.toLowerCase() === "pending") {
+              setStats(prev => ({
+                ...prev,
+                pendingOrders: prev.pendingOrders + 1
+              }));
+            }
+            return { ...order, status: newStatus };
+          }
+          return order;
         })
-      }
+      );
+
+      handleCloseDrawer();
     } catch (error) {
-      console.error("Error updating order status:", error)
+      console.error("Error updating order status:", error);
     }
-  }
+  };
 
   const handleDeleteOrder = async (orderId: string) => {
     try {
+      // Delete on the server first (matching orders page implementation)
       const response = await fetch(`/api/orders`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id: orderId }),
-      })
+        body: JSON.stringify({ 
+          id: orderId,
+          role: "admin" // Match the working implementation
+        }),
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to delete order")
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete order");
       }
 
-      // Update local state by removing the deleted order
-      setOrders(orders.filter((order) => order.id !== orderId))
+      // Update local state and stats
+      setOrders((prevOrders) => {
+        const orderToDelete = prevOrders.find(order => order.id === orderId);
+        if (orderToDelete) {
+          setStats(prev => ({
+            ...prev,
+            totalOrders: prev.totalOrders - 1,
+            pendingOrders: orderToDelete.status.toLowerCase() === "pending" 
+              ? prev.pendingOrders - 1 
+              : prev.pendingOrders,
+            totalSales: orderToDelete.status.toLowerCase() === "completed"
+              ? prev.totalSales - Number(orderToDelete.total)
+              : prev.totalSales
+          }));
+        }
+        return prevOrders.filter(order => order.id !== orderId);
+      });
 
-      // Update stats
-      setStats({
-        ...stats,
-        totalOrders: stats.totalOrders - 1,
-        pendingOrders:
-          orders.find((order) => order.id === orderId)?.status === "Pending"
-            ? stats.pendingOrders - 1
-            : stats.pendingOrders,
-      })
+      handleCloseDrawer();
     } catch (error) {
-      console.error("Error deleting order:", error)
+      console.error("Error deleting order:", error);
     }
-  }
+  };
 
   const handleRefundOrder = async (orderId: string) => {
     try {
@@ -292,9 +316,9 @@ const VendorDashboard = () => {
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Sales Insights</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-          { /*<ErrorBoundary>
+          <ErrorBoundary>
             <SalesChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-          </ErrorBoundary> */}
+          </ErrorBoundary>
           <ErrorBoundary>
             <BestSellingChart className="w-full h-full transition duration-300 hover:shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
           </ErrorBoundary>
