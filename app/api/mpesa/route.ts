@@ -16,6 +16,26 @@ const MPESA_STK_URL = MPESA_ENV === 'sandbox'
   ? 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
   : 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
+const getBaseUrl = () => {
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:3000';
+  }
+  return process.env.NEXT_PUBLIC_BASE_URL;
+};
+
+// Update validation function
+const validateConfig = () => {
+  const baseUrl = getBaseUrl();
+  
+  if (!baseUrl) {
+    throw new Error('Base URL not configured');
+  }
+
+  if (MPESA_ENV !== 'sandbox' && !baseUrl.startsWith('https')) {
+    throw new Error('Production callback URL must use HTTPS');
+  }
+};
+
 async function getAccessToken(): Promise<string> {
   const auth = Buffer.from(`${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`).toString('base64');
   
@@ -41,6 +61,8 @@ async function getAccessToken(): Promise<string> {
 
 export async function POST(req: Request) {
   try {
+    validateConfig();
+
     const { phoneNumber, amount, orderId } = await req.json();
 
     if (!phoneNumber || !amount || !orderId) {
@@ -104,6 +126,8 @@ export async function POST(req: Request) {
       // Get access token outside transaction to avoid timeouts
       const accessToken = await getAccessToken();
 
+      const callbackUrl = `${getBaseUrl()}/api/mpesa/callback`;
+
       // Make STK push request
       const stkResponse = await fetch(MPESA_STK_URL, {
         method: 'POST',
@@ -120,7 +144,7 @@ export async function POST(req: Request) {
           PartyA: phoneNumber,
           PartyB: MPESA_SHORTCODE,
           PhoneNumber: phoneNumber,
-          CallBackURL: `${process.env.NEXT_PUBLIC_BASE_URL}/api/mpesa/callback`,
+          CallBackURL: callbackUrl,
           AccountReference: `Order-${orderId}`,
           TransactionDesc: "Payment for order"
         }),
@@ -175,6 +199,8 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('M-Pesa API Error:', {
       error,
+      env: MPESA_ENV,
+      baseUrl: getBaseUrl(),
       timestamp: new Date().toISOString()
     });
 
