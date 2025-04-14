@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
 import { OrderStatus, TransactionStatus, PaymentMethod } from "@prisma/client";
 
+// Environment variables
 const MPESA_CONSUMER_KEY = process.env.MPESA_CONSUMER_KEY!;
 const MPESA_CONSUMER_SECRET = process.env.MPESA_CONSUMER_SECRET!;
 const MPESA_PASSKEY = process.env.MPESA_PASSKEY!;
 const MPESA_SHORTCODE = process.env.MPESA_SHORTCODE!;
 const MPESA_ENV = process.env.MPESA_ENV || 'sandbox';
 
+// API URLs based on environment
 const MPESA_AUTH_URL = MPESA_ENV === 'sandbox' 
   ? 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
   : 'https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
@@ -16,37 +18,37 @@ const MPESA_STK_URL = MPESA_ENV === 'sandbox'
   ? 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
   : 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
+// Helper function to get base URL
 const getBaseUrl = () => {
-  // In development, always use localhost
   if (process.env.NODE_ENV === 'development') {
+    // For local development, use ngrok URL if available
+    if (process.env.NGROK_URL) {
+      return process.env.NGROK_URL;
+    }
+    console.warn('Warning: Using localhost for M-Pesa callback may not work');
     return 'http://localhost:3000';
   }
   
-  // In production, use the configured URL
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL;
+  // For production
+  const productionUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!productionUrl) {
+    throw new Error('NEXT_PUBLIC_BASE_URL not configured for production');
   }
-
-  // Fallback to localhost if nothing else is configured
-  return 'http://localhost:3000';
+  return productionUrl;
 };
 
-// Add this helper function at the top of your file
+// Phone number formatting helper
 const formatPhoneNumber = (phoneNumber: string): string => {
-  // Remove any spaces or special characters
   let cleaned = phoneNumber.replace(/\D/g, '');
   
-  // If number starts with 0, replace with 254
   if (cleaned.startsWith('0')) {
     cleaned = '254' + cleaned.slice(1);
   }
   
-  // If number starts with +, remove it
   if (cleaned.startsWith('+')) {
     cleaned = cleaned.slice(1);
   }
   
-  // Ensure number starts with 254
   if (!cleaned.startsWith('254')) {
     cleaned = '254' + cleaned;
   }
@@ -54,11 +56,10 @@ const formatPhoneNumber = (phoneNumber: string): string => {
   return cleaned;
 };
 
-// Update validation function
+// Configuration validation
 const validateConfig = () => {
   const baseUrl = getBaseUrl();
   
-  // Add more detailed error logging
   console.log('Environment Config:', {
     baseUrl,
     mpesaEnv: MPESA_ENV,
@@ -78,6 +79,7 @@ const validateConfig = () => {
   }
 };
 
+// Access token generation
 async function getAccessToken(): Promise<string> {
   const auth = Buffer.from(`${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`).toString('base64');
   
@@ -88,7 +90,7 @@ async function getAccessToken(): Promise<string> {
         'Authorization': `Basic ${auth}`,
         'Content-Type': 'application/json',
       },
-      cache: 'no-store' // Disable caching
+      cache: 'no-store'
     });
 
     const data = await response.json();
@@ -110,13 +112,13 @@ async function getAccessToken(): Promise<string> {
   }
 }
 
+// Main POST handler
 export async function POST(req: Request) {
   try {
     validateConfig();
 
     const { phoneNumber, amount, orderId } = await req.json();
 
-    // Validate inputs first
     if (!phoneNumber || !amount || !orderId) {
       return NextResponse.json(
         { error: "Phone number, amount and orderId are required" },
@@ -133,14 +135,21 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get M-Pesa access token and prepare STK push data first
     const accessToken = await getAccessToken();
     const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
     const password = Buffer.from(
       `${MPESA_SHORTCODE}${MPESA_PASSKEY}${timestamp}`
     ).toString('base64');
 
-    // Make STK push request before database transaction
+    // Log STK push request details
+    console.log('STK Push Request:', {
+      phoneNumber: formattedPhone,
+      amount: Math.round(Number(amount)),
+      orderId,
+      timestamp,
+      callbackUrl: `${getBaseUrl()}/api/mpesa/callback`
+    });
+
     const stkResponse = await fetch(MPESA_STK_URL, {
       method: 'POST',
       headers: {
@@ -157,12 +166,14 @@ export async function POST(req: Request) {
         PartyB: MPESA_SHORTCODE,
         PhoneNumber: formattedPhone,
         CallBackURL: `${getBaseUrl()}/api/mpesa/callback`,
-        AccountReference: orderId.slice(0, 12),
-        TransactionDesc: "Payment for order"
+        AccountReference: `${orderId.slice(0, 12)}`,
+        TransactionDesc: `Payment`
       }),
     });
 
+    // Log raw response for debugging
     const responseText = await stkResponse.text();
+    console.log('STK Response Status:', stkResponse.status);
     console.log('STK Raw Response:', responseText);
 
     let mpesaResponse;
@@ -173,9 +184,8 @@ export async function POST(req: Request) {
       throw new Error('Invalid response from M-Pesa');
     }
 
-    // Now handle database updates with a shorter transaction
+    // Database transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Check order exists
       const order = await tx.order.findUnique({
         where: { id: orderId },
         select: { 
@@ -189,7 +199,6 @@ export async function POST(req: Request) {
         throw new Error('Order not found');
       }
 
-      // Update or create transaction
       const transactionData = {
         orderId,
         customerId: order.customerId,
@@ -207,7 +216,6 @@ export async function POST(req: Request) {
         update: transactionData,
       });
 
-      // Update order status if STK push was successful
       if (mpesaResponse.ResponseCode === "0") {
         await tx.order.update({
           where: { id: orderId },
@@ -222,7 +230,7 @@ export async function POST(req: Request) {
 
       throw new Error(mpesaResponse.errorMessage || "STK push failed");
     }, {
-      timeout: 10000 // Increase timeout to 10 seconds
+      timeout: 10000
     });
 
     return NextResponse.json(result);
