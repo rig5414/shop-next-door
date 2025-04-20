@@ -174,10 +174,17 @@ export default function Register() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-900 hover:scale-105 cursor-pointer transition-all"
+              className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-900 hover:scale-105 cursor-pointer transition-all flex items-center justify-center gap-2"
               disabled={loading}
             >
-              {loading ? "Signing Up..." : "Sign Up"}
+              {loading ? (
+                <>
+                  Signing Up...
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+                </>
+              ) : (
+                "Sign Up"
+              )}
             </button>
           </form>
 
@@ -213,11 +220,33 @@ export default function Register() {
         }
         @media (prefers-color-scheme: light) {
           input:-webkit-autofill {
-            background-color: rgba(240, 240, 240, 1) !important;
-            color: black !important;
-            -webkit-text-fill-color: black !important;
-            border: 1px solid rgba(0, 174, 255, 0.7) !important;
+            background-color: rgb(31, 41, 55) !important;
+            color: white !important;
+            -webkit-text-fill-color: white !important;
           }
+        }
+
+        /* Chrome/Safari/Opera */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 30px rgb(31, 41, 55) inset !important;
+          -webkit-text-fill-color: white !important;
+          caret-color: white !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* Firefox */
+        input:autofill {
+          background: rgb(31, 41, 55) !important;
+          color: white !important;
+          box-shadow: 0 0 0 30px rgb(31, 41, 55) inset !important;
+        }
+
+        input {
+          background: rgb(31, 41, 55) !important;
+          color: white !important;
         }
       `}</style>
     </div>

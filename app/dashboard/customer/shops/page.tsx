@@ -20,9 +20,11 @@ const ShopsPage = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedType, setSelectedType] = useState<string>("All");
   const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchShops = async () => {
+      setLoading(true);
       try {
         const response = await fetch("/api/shops");
         if (!response.ok) throw new Error("Failed to fetch shops");
@@ -30,10 +32,12 @@ const ShopsPage = () => {
         console.log("Fetched Shops:", data);
         data.forEach(shop => {
           console.log(`Shop ID: ${shop.id}, Name: ${shop.name}, Type: ${shop.type}, Status: ${shop.status}`);
-      });
+        });
         setShops(data);
       } catch (error) {
         console.error("Error fetching shops:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -102,36 +106,43 @@ const ShopsPage = () => {
       </div>
 
       {/* Shop Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredShops.length > 0 ? (
-          filteredShops.map((shop) => (
-            <Link
-              key={shop.id}
-              href={`/dashboard/customer/shops/${shop.id}`}
-              className="block bg-gray-900 p-4 rounded-lg hover:bg-gray-700 transition"
-            >
-              <div className="flex items-center">
-                <FiShoppingBag className="text-blue-400 w-6 h-6 mr-3" />
-                <div>
-                  <h2 className="text-lg font-medium text-white">{shop.name}</h2>
-                  <p className="text-sm text-gray-400">{shop.description}</p>
-                  <span
-                    className={`text-xs font-semibold ${
-                      shop.status === "active" ? "text-green-400" : "text-red-400"
-                    }`}
-                  >
-                    {shop.status === "active" ? "Open" : "Closed"}
-                  </span>
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 text-gray-400 h-32">
+          Loading Shops...
+          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredShops.length > 0 ? (
+            filteredShops.map((shop) => (
+              <Link
+                key={shop.id}
+                href={`/dashboard/customer/shops/${shop.id}`}
+                className="block bg-gray-900 p-4 rounded-lg hover:bg-gray-700 transition"
+              >
+                <div className="flex items-center">
+                  <FiShoppingBag className="text-blue-400 w-6 h-6 mr-3" />
+                  <div>
+                    <h2 className="text-lg font-medium text-white">{shop.name}</h2>
+                    <p className="text-sm text-gray-400">{shop.description}</p>
+                    <span
+                      className={`text-xs font-semibold ${
+                        shop.status === "active" ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {shop.status === "active" ? "Open" : "Closed"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))
-        ) : (
-          <div className="col-span-3 text-center py-8 text-gray-400">
-            No shops found matching your criteria.
-          </div>
-        )}
-      </div>
+              </Link>
+            ))
+          ) : (
+            <div className="col-span-3 text-center py-8 text-gray-400">
+              No shops found matching your criteria.
+            </div>
+          )}
+        </div>
+      )}
     </DashboardLayout>
   );
 };

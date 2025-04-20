@@ -53,7 +53,12 @@ const OrdersPage = () => {
         <p className="text-gray-300">Track your past and current orders.</p>
 
         {/* Loading state */}
-        {loading && <p className="text-gray-300 mt-4">Loading your orders...</p>}
+        {loading && (
+          <div className="flex items-center gap-2 text-gray-400 mt-4">
+            Loading your orders...
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        )}
 
         {/* Error message */}
         {error && <p className="text-red-500 mt-4">{error}</p>}

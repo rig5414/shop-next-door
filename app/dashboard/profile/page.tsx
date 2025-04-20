@@ -17,16 +17,16 @@ type ProfileData = {
 };
 
 const Spinner = () => (
-  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900">
-  </div>
+  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
 );
 
 const ProfilePage = () => {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const [role, setRole] = useState<"customer" | "vendor" | "admin" | null>(null);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [updating, setUpdating] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -73,6 +73,7 @@ const ProfilePage = () => {
 
   // Function to update profile state correctly
   const handleProfileUpdate = async (updatedData: Partial<ProfileData>) => {
+    setUpdating(true);
     try {
       if (!session?.user?.id) return;
 
@@ -99,18 +100,33 @@ const ProfilePage = () => {
         profilePic: updatedProfile.profilePic || prev.profilePic,
       } : prev);
 
-      // Optionally show success message
-      // You can add a toast/notification here if you want
+      // Update the session using the update method from useSession
+      await update({
+        ...session,
+        user: {
+          ...session?.user,
+          name: `${updatedProfile.firstName} ${updatedProfile.lastName}`,
+          email: updatedProfile.email,
+          image: updatedProfile.profilePic,
+        }
+      });
+
+      // Force a router refresh to update the UI
+      router.refresh();
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
+    } finally {
+      setUpdating(false);
     }
   };
 
   if (loading || !role) return (
-    <div className="flex flex-col justify-center items-center h-50">
-      <p className="text-gray-500 mt-2 mb-2">Loading profile...</p>
-      <Spinner />
+    <div className="flex flex-col justify-center items-center h-screen bg-gray-900">
+      <div className="flex items-center gap-2 text-gray-400">
+        Loading profile...
+        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
     </div>
   );  
   if (error) return (
@@ -124,9 +140,39 @@ const ProfilePage = () => {
     <DashboardLayout role={role}>
       <div className="p-6">
         <ProfileHeader />
-        <ProfileDetails profileData={profileData} onProfileUpdate={handleProfileUpdate} />
+        <ProfileDetails 
+          profileData={profileData} 
+          onProfileUpdate={handleProfileUpdate} 
+          isUpdating={updating}
+        />
         <ChangePassword />
       </div>
+
+      {/* Add these styles */}
+      <style jsx global>{`
+        /* Chrome, Safari, Opera */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 30px rgb(31, 41, 55) inset !important;
+          -webkit-text-fill-color: white !important;
+          caret-color: white !important;
+        }
+
+        /* Firefox */
+        input:autofill {
+          background: rgb(31, 41, 55) !important;
+          color: white !important;
+          box-shadow: 0 0 0 30px rgb(31, 41, 55) inset !important;
+        }
+
+        /* General input styles */
+        input {
+          background: rgb(31, 41, 55) !important;
+          color: white !important;
+        }
+      `}</style>
     </DashboardLayout>
   );
 };

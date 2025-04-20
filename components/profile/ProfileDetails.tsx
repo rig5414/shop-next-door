@@ -9,8 +9,14 @@ interface ProfileData {
 }
 
 interface ProfileDetailsProps {
-  profileData: ProfileData;
-  onProfileUpdate: (updatedData: Partial<ProfileData>) => Promise<void>;
+  profileData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    profilePic: string;
+  };
+  onProfileUpdate: (data: Partial<ProfileData>) => Promise<void>;
+  isUpdating: boolean;
 }
 
 const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileUpdate }) => {
@@ -18,6 +24,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(profileData);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Ensure data is populated from session if missing
   useEffect(() => {
@@ -29,6 +36,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
         firstName: profileData.firstName || firstName || "",
         lastName: profileData.lastName || lastName || "",
         email: profileData.email || session.user.email || "",
+        profilePic: profileData.profilePic,
       });
     }
   }, [session, profileData]);
@@ -49,6 +57,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
     }
 
     setIsEditing(false);
+    setIsUpdating(true);
     const updatedProfile = {
       name: `${formData.firstName} ${formData.lastName}`,
       email: formData.email,
@@ -86,6 +95,7 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
     }
     } finally {
         controller.abort();
+        setIsUpdating(false);
     }
   };
 
@@ -146,8 +156,19 @@ const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileU
       <div className="mt-4 flex gap-4">
         {isEditing ? (
           <>
-            <button onClick={handleSave} className="bg-green-600 px-4 py-2 rounded-md text-white hover:bg-green-500 transition">
-              Save
+            <button 
+              type="submit"
+              disabled={isUpdating}
+              className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-900 cursor-pointer transition-all flex items-center justify-center gap-2"
+            >
+              {isUpdating ? (
+                <>
+                  Updating...
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+                </>
+              ) : (
+                "Save Changes"
+              )}
             </button>
             <button onClick={() => setIsEditing(false)} className="bg-red-600 px-4 py-2 rounded-md text-white hover:bg-red-500 transition">
               Cancel

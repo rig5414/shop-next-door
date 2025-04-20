@@ -37,6 +37,7 @@ const ShopPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [customerId, setCustomerId] = useState<string>("")
+  const [addingToCart, setAddingToCart] = useState<string | null>(null)
 
   useEffect(() => {
     // Fetch the current user's ID from the session
@@ -90,6 +91,7 @@ const ShopPage = () => {
 
   // Add to Cart Function
   const addToCart = (productId: string) => {
+    setAddingToCart(productId)
     const product = products.find((p) => p.id === productId)
     if (!product) return
 
@@ -102,13 +104,15 @@ const ShopPage = () => {
     })
 
     setCartOpen(true) // Open cart when adding item
+    setAddingToCart(null)
   }
 
   if (loading) {
     return (
       <DashboardLayout role="customer">
-        <div className="flex justify-center items-center h-64">
-          <p className="text-white">Loading shop details...</p>
+        <div className="flex items-center justify-center gap-2 text-gray-400 h-64">
+          Loading shop details...
+          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       </DashboardLayout>
     )
@@ -191,9 +195,17 @@ const ShopPage = () => {
                 <p className="text-blue-400 font-bold mb-3">KSh {product.price.toLocaleString()}</p>
                 <button
                   onClick={() => addToCart(product.id)}
-                  className="w-full bg-blue-600 px-4 py-2 rounded-lg text-white hover:bg-blue-700 transition"
+                  className="w-full bg-blue-600 px-4 py-2 rounded-lg text-white hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  disabled={addingToCart === product.id}
                 >
-                  Add to Cart
+                  {addingToCart === product.id ? (
+                    <>
+                      Adding...
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+                    </>
+                  ) : (
+                    "Add to Cart"
+                  )}
                 </button>
               </div>
             ))}

@@ -34,6 +34,8 @@ const CustomerDashboard = () => {
 
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(false)
+  const [ordersLoading, setOrdersLoading] = useState(true)
+  const [shopsLoading, setShopsLoading] = useState(true)
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user) return
@@ -45,6 +47,7 @@ const CustomerDashboard = () => {
   }, [session, status])
 
   const fetchOrders = async (customerId: string) => {
+    setOrdersLoading(true)
     try {
       const res = await fetch(`/api/orders?customerId=${customerId}`)
       const data = await res.json()
@@ -88,10 +91,13 @@ const CustomerDashboard = () => {
     } catch (error) {
       console.error("Error fetching orders:", error)
       setOrders([])
+    } finally {
+      setOrdersLoading(false)
     }
   }
 
   const fetchShops = async () => {
+    setShopsLoading(true)
     try {
       const res = await fetch("/api/shops")
       const data: Shop[] = await res.json()
@@ -109,6 +115,8 @@ const CustomerDashboard = () => {
     } catch (error) {
       console.error("Error fetching shops:", error)
       setOpenShops([])
+    } finally {
+      setShopsLoading(false)
     }
   }
 
@@ -152,7 +160,12 @@ const CustomerDashboard = () => {
       {/* Recent Orders */}
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Recent Orders</h2>
-        {orders.length > 0 ? (
+        {ordersLoading ? (
+          <div className="flex items-center gap-2 text-gray-400">
+            Loading Orders...
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : orders.length > 0 ? (
           <OrderList orders={orders} onOpenModal={setSelectedOrder} />
         ) : (
           <p className="text-gray-400">No orders found.</p>
@@ -163,7 +176,10 @@ const CustomerDashboard = () => {
       <section className="mt-6">
         <h2 className="text-xl font-semibold text-white">Recommended for You</h2>
         {loading ? (
-          <p className="text-gray-400">Loading products...</p>
+          <div className="flex items-center gap-2 text-gray-400">
+            Loading Products...
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
         ) : recommendedProducts.length > 0 ? (
           <ProductList products={recommendedProducts.map((product) => ({ ...product, stock: 0 }))} hidePriceAndStock />
         ) : (
@@ -174,27 +190,34 @@ const CustomerDashboard = () => {
       {/* Open Shops Section */}
       <section className="mt-6 bg-gray-800 p-4 rounded-lg shadow-md">
         <h2 className="text-xl font-semibold text-white mb-3">Open Shops</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {openShops.length > 0 ? (
-            openShops.map((shop) => (
-              <Link
-                key={shop.id}
-                href={`/dashboard/customer/shops/${shop.id}`}
-                className="block bg-gray-900 p-4 rounded-md hover:bg-gray-700 transition"
-              >
-                <div className="flex items-center">
-                  <FiShoppingBag className="text-blue-400 w-6 h-6 mr-3" />
-                  <div>
-                    <h4 className="text-lg font-medium text-white">{shop.name}</h4>
-                    <p className="text-sm text-gray-400">{shop.description}</p>
+        {shopsLoading ? (
+          <div className="flex items-center gap-2 text-gray-400">
+            Loading Shops...
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {openShops.length > 0 ? (
+              openShops.map((shop) => (
+                <Link
+                  key={shop.id}
+                  href={`/dashboard/customer/shops/${shop.id}`}
+                  className="block bg-gray-900 p-4 rounded-md hover:bg-gray-700 transition"
+                >
+                  <div className="flex items-center">
+                    <FiShoppingBag className="text-blue-400 w-6 h-6 mr-3" />
+                    <div>
+                      <h4 className="text-lg font-medium text-white">{shop.name}</h4>
+                      <p className="text-sm text-gray-400">{shop.description}</p>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <p className="text-gray-400">No open shops available.</p>
-          )}
-        </div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-gray-400">No open shops available.</p>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Order Details Modal */}
