@@ -102,8 +102,14 @@ export default function PaymentForm({ totalAmount, onClose, customerId, shopId, 
       const order = await createOrder()
       console.log("Order created:", order)
 
+      // Simply proceed to orders page after order creation
+      setSuccess(true)
+      setTimeout(() => {
+        window.location.href = "/dashboard/customer/orders"
+      }, 500)
+
+      /* Comment out payment processing for now
       if (paymentMethod === "mpesa") {
-        // Format phone number and initiate STK push
         const formattedPhone = formatPhoneNumber(phoneNumber)
         const mpesaResponse = await initiateMpesaPayment(formattedPhone, order.id)
         
@@ -118,14 +124,12 @@ export default function PaymentForm({ totalAmount, onClose, customerId, shopId, 
       } else if (paymentMethod === "airtel") {
         // Implement Airtel Money logic here
         throw new Error("Airtel Money integration coming soon")
-      } else if (paymentMethod === "cod") {
-        setSuccess(true)
-        setTimeout(() => {
-          window.location.href = "/dashboard/customer/orders"
-        }, 500)
-      }
+      } 
+      */
+      
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to process payment")
+      // If order creation fails, show error
+      setError("Failed to create order. Please try again.")
       setLoading(false)
     }
   }

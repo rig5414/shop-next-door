@@ -1,11 +1,12 @@
-export async function fetchInsights() {
-    try {
-      const res = await fetch("/api/insights", { cache: "no-store" }); // Disable caching for fresh data
-      if (!res.ok) throw new Error("Failed to fetch insights");
-      return await res.json();
-    } catch (error) {
-      console.error("Error fetching insights:", error);
-      return null; // Handle errors gracefully
+export const fetchInsights = async (endpoint: string = '/api/insights') => {
+  try {
+    const response = await fetch(endpoint);
+    if (!response.ok) {
+      throw new Error('Failed to fetch insights');
     }
+    return await response.json();
+  } catch (error) {
+    console.error('Error in fetchInsights:', error);
+    throw error;
   }
-  
+};

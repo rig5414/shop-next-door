@@ -17,7 +17,7 @@ import {
 } from "chart.js";
 import { Chart } from "chart.js";
 import { useRouter } from "next/navigation";
-import { fetchInsights } from "../../../lib/fetchInsights";
+import { useSession } from "next-auth/react";
 
 // Register Chart.js components
 ChartJS.register(
@@ -26,8 +26,8 @@ ChartJS.register(
     PointElement,
     LineElement,
     BarElement,
-    BarController,  // Add this
-    LineController, // Add this
+    BarController,
+    LineController,
     Title,
     Tooltip,
     Legend,
@@ -37,7 +37,8 @@ ChartJS.register(
 interface Sale {
     date: string;
     total: number;
-    status: string;
+    completed: number;
+    completionRate: number;
 }
 
 interface SalesData {
@@ -60,8 +61,22 @@ const cn = (...classes: string[]): string => {
     return classes.filter(Boolean).join(' ');
 };
 
+// Update the monthly data aggregation
+const aggregateMonthlyData = (sales: Sale[]) => {
+    return sales.reduce((acc, sale) => ({
+        ...acc,
+        [sale.date]: {
+            total: sale.total,
+            completed: sale.completed,
+            completionRate: sale.completionRate
+        }
+    }), {} as Record<string, { total: number; completed: number; completionRate: number }>);
+};
+
 const SalesChart = ({ className = "" }) => {
+    const { data: session } = useSession();
     const router = useRouter();
+    const [error, setError] = useState<string | null>(null);
     const [salesData, setSalesData] = useState<SalesData>({
         labels: [],
         datasets: [],
@@ -74,36 +89,41 @@ const SalesChart = ({ className = "" }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const insights = await fetchInsights();
-                if (!insights || !insights.sales) {
-                    console.error("No sales data in insights:", insights);
-                    return;
+                // Fetch all insights without any filtering
+                const response = await fetch('/api/insights', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch insights: ${response.statusText}`);
                 }
+
+                const insights = await response.json();
+                console.log("Received insights:", insights); // Debug log
+
+                if (!insights || !insights.sales) {
+                    throw new Error("No sales data available");
+                }
+
                 setFetchedData(insights);
+                setError(null);
             } catch (error) {
                 console.error("Error fetching sales data:", error);
+                setError(error instanceof Error ? error.message : 'Failed to fetch insights');
             }
         };
+
         fetchData();
     }, []);
 
     useEffect(() => {
         if (!fetchedData?.sales) return;
 
-        const labels = fetchedData.sales.map((sale: Sale) => {
-            const date = new Date(sale.date);
-            return isNaN(date.getTime()) 
-                ? "Invalid Date" 
-                : date.toLocaleDateString("en-US", { month: 'short', year: 'numeric' });
-        });
-
-        const totalSales = fetchedData.sales.map((sale: Sale) => Number(sale.total) || 0);
-        const completedSales = fetchedData.sales.map((sale: Sale) => 
-            sale.status === 'completed' ? Number(sale.total) : 0
-        );
-        const completionRate = totalSales.map((total: number, index: number) => 
-            total > 0 ? (completedSales[index] / total) * 100 : 0
-        );
+        const monthlyData = fetchedData.sales;
+        const labels = monthlyData.map(sale => sale.date);
 
         setSalesData({
             labels,
@@ -111,7 +131,7 @@ const SalesChart = ({ className = "" }) => {
                 {
                     type: "bar",
                     label: "Total Sales (KSh)",
-                    data: totalSales,
+                    data: monthlyData.map(sale => sale.total),
                     backgroundColor: 'rgba(96, 165, 250, 0.7)',
                     borderColor: '#60a5fa',
                     borderWidth: 1,
@@ -120,7 +140,7 @@ const SalesChart = ({ className = "" }) => {
                 {
                     type: "bar",
                     label: "Completed Sales (KSh)",
-                    data: completedSales,
+                    data: monthlyData.map(sale => sale.completed),
                     backgroundColor: 'rgba(16, 185, 129, 0.7)',
                     borderColor: '#10b981',
                     borderWidth: 1,
@@ -129,7 +149,7 @@ const SalesChart = ({ className = "" }) => {
                 {
                     type: "line",
                     label: "Completion Rate (%)",
-                    data: completionRate,
+                    data: monthlyData.map(sale => sale.completionRate),
                     borderColor: '#f59e0b',
                     backgroundColor: 'rgba(245, 158, 11, 0.1)',
                     borderWidth: 2,
@@ -271,19 +291,25 @@ const SalesChart = ({ className = "" }) => {
 
     return (
         <div className={cn(
-            "bg-gray-800 p-6 rounded-lg shadow-md", 
+            "bg-gray-800 p-6 rounded-lg shadow-md",
             "hover:opacity-80 transition-opacity",
             className
         )}>
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-white text-xl font-semibold mb-3">Sales History</h2>
+                <h2 className="text-white text-xl font-semibold">Sales History</h2>
             </div>
-            <div className="h-[300px] w-full relative"> 
-                <canvas ref={chartRef} className="w-full h-full" />
-                {salesData.labels.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <p className="text-gray-400 text-sm">Loading...</p>
+            <div className="h-[300px] w-full relative">
+                {error ? (
+                    <div className="absolute inset-0 flex items-center justify-center text-red-400">
+                        <p>{error}</p>
                     </div>
+                ) : !salesData.labels.length ? (
+                    <div className="absolute inset-0 flex items-center justify-center gap-2">
+                        <p className="text-gray-400">Loading data..</p>
+                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                ) : (
+                    <canvas ref={chartRef} className="w-full h-full" />
                 )}
             </div>
         </div>

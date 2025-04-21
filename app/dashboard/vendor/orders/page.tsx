@@ -7,6 +7,7 @@ import OrdersOverview from "../../../../components/orders/OrdersOverview"
 import OrderList from "../../../../components/orders/OrderList"
 import OrdersExport from "../../../../components/orders/OrdersExport"
 import OrderDetailsDrawer from "../../../../components/orders/OrderDetailsDrawer"
+import Spinner from "../../../../components/ui/Spinner"
 import type { Order, OrderStatus } from "../../../types"
 import { useSession } from "next-auth/react"
 
@@ -158,7 +159,10 @@ const OrdersPage: React.FC = () => {
     return (
       <DashboardLayout role="vendor">
         <div className="p-6">
-          <p>Loading orders...</p>
+          <div className="flex items-center gap-2">
+            <p>Loading orders..</p>
+            <Spinner />
+          </div>
         </div>
       </DashboardLayout>
     )

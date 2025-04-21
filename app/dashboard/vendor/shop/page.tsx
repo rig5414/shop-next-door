@@ -7,6 +7,7 @@ import ShopInfoCard from "../../../../components/shop/ShopInfoCard";
 import EditShopModal from "../../../../components/shop/EditShopModal";
 import ProductModal from "../../../../components/shop/ProductModals";
 import { useSession } from "next-auth/react";
+import Spinner from "../../../../components/ui/Spinner";
 
 interface Shop {
   id: string;
@@ -24,6 +25,7 @@ const VendorShopPage = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -58,6 +60,7 @@ const VendorShopPage = () => {
 
   const handleShopUpdate = async (updatedShop: { name: string; description: string; type: "local_shop" | "grocery_shop" }) => {
     if (!shop) return;
+    setIsUpdating(true);
 
     try {
       const res = await fetch(`/api/shops/${shop.id}`, {
@@ -76,6 +79,8 @@ const VendorShopPage = () => {
       setIsEditOpen(false);
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -83,13 +88,28 @@ const VendorShopPage = () => {
     setIsAddOpen(false);
   };
 
-  if (loading) return <p className="text-white">Loading shop data...</p>;
-  if (!shop) return <p className="text-white">No shop found for this vendor.</p>;
-  console.log("Rendering with shop:", shop, "Loading:", loading);
+  if (loading) return (
+    <DashboardLayout role="vendor">
+      <div className="flex items-center gap-2 p-6 text-white">
+        <span>Loading shop data...</span>
+        <Spinner />
+      </div>
+    </DashboardLayout>
+  );
+
+  if (!shop) return (
+    <DashboardLayout role="vendor">
+      <div className="p-6 text-white">No shop found for this vendor.</div>
+    </DashboardLayout>
+  );
 
   return (
     <DashboardLayout role="vendor">
-      <ShopInfoCard shopId={shop.id} onEdit={() => setIsEditOpen(true)} shopData={shop} />
+      <ShopInfoCard 
+        shopId={shop.id} 
+        onEdit={() => setIsEditOpen(true)} 
+        shopData={shop} 
+      />
 
       {isEditOpen && (
         <EditShopModal
@@ -97,6 +117,7 @@ const VendorShopPage = () => {
           onClose={() => setIsEditOpen(false)}
           shopData={shop}
           onSave={handleShopUpdate}
+          isUpdating={isUpdating}
         />
       )}
 
@@ -116,9 +137,17 @@ const VendorShopPage = () => {
           <h2 className="text-xl font-semibold text-white">Products</h2>
           <button
             onClick={() => setIsAddOpen(true)}
-            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 mb-2"
+            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 mb-2 flex items-center gap-2"
+            disabled={isUpdating}
           >
-            + Add Product
+            {isUpdating ? (
+              <>
+                <span>Adding</span>
+                <Spinner />
+              </>
+            ) : (
+              '+ Add Product'
+            )}
           </button>
         </div>
         <ProductList shopId={shop.id} />

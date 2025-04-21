@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Spinner from "../../components/ui/Spinner";
 
 interface EditShopModalProps {
   isOpen: boolean;
@@ -14,9 +15,16 @@ interface EditShopModalProps {
     vendorId: string;
   };
   onSave: (updatedShop: { name: string; description: string; type: "local_shop" | "grocery_shop" }) => void;
+  isUpdating?: boolean;
 }
 
-const EditShopModal: React.FC<EditShopModalProps> = ({ isOpen, onClose, shopData, onSave }) => {
+const EditShopModal: React.FC<EditShopModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  shopData, 
+  onSave, 
+  isUpdating 
+}) => {
   const [shop, setShop] = useState(shopData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -109,10 +117,17 @@ const EditShopModal: React.FC<EditShopModalProps> = ({ isOpen, onClose, shopData
           </button>
           <button
             onClick={handleSave}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            disabled={loading}
+            disabled={isUpdating}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
           >
-            {loading ? "Saving..." : "Save Changes"}
+            {isUpdating ? (
+              <>
+                <span>Updating</span>
+                <Spinner />
+              </>
+            ) : (
+              'Save Changes'
+            )}
           </button>
         </div>
       </div>

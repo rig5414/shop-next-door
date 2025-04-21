@@ -109,7 +109,7 @@ const ChangePassword = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4 bg-[#0f0c29] mt-2 rounded-lg p-6 shadow-lg">
       {/* Current Password */}
       <div>
         <label className="block text-sm font-medium text-white">Current Password</label>

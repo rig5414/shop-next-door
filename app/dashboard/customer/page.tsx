@@ -44,6 +44,23 @@ const CustomerDashboard = () => {
     fetchOrders(session.user.id)
     fetchShops()
     fetchProducts()
+
+    // Event listener for profile updates
+    const handleProfileUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent
+      const updatedProfile = customEvent.detail
+      console.log("Profile update event received:", updatedProfile)
+
+      if (updatedProfile.name) {
+        setCustomerName(updatedProfile.name)
+        console.log("Updated name to:", updatedProfile.name)
+      }
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
   }, [session, status])
 
   const fetchOrders = async (customerId: string) => {

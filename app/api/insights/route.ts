@@ -1,109 +1,170 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
 
-export async function GET() {
-  try {
-    // 1️⃣ **Total Sales (Aggregated by Day)**
-    const sales = await prisma.order.findMany({
-      orderBy: { createdAt: "asc" },
-      select: {
-        createdAt: true,
-        total: true,
-      },
-    });
+export async function GET(request: Request) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
-    const dailySales: { [date: string]: number } = {}; // Use an object to store daily totals
+        // Initialize empty whereClause
+        const whereClause = {};
 
-    sales.forEach((sale) => {
-      const date = sale.createdAt.toISOString().split("T")[0]; // Get YYYY-MM-DD
-      if (dailySales[date]) {
-        dailySales[date] += sale.total.toNumber(); // Add to existing total
-      } else {
-        dailySales[date] = sale.total.toNumber(); // Start new total for the day
-      }
-    });
-
-    const salesData = Object.entries(dailySales).map(([date, total]) => ({
-      date,
-      total,
-    }));
-
-    // 2️⃣ **Best-Selling Products** (Top 5 products)
-    const bestSelling = await prisma.orderItem.groupBy({
-      by: ["productId"],
-      _sum: { quantity: true },
-      orderBy: { _sum: { quantity: "desc" } },
-      take: 5,
-    });
-
-    const bestSellingData = await Promise.all(
-      bestSelling.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
-          select: { catalog: { select: { name: true } } },
+        // Fetch all orders
+        const orders = await prisma.order.findMany({
+            include: {
+                items: {
+                    select: {
+                        price: true,
+                        quantity: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'asc'
+            }
         });
 
-        return {
-          product: product?.catalog.name || "Unknown",
-          quantitySold: item._sum?.quantity ?? 0,
-        };
-      })
-    );
+        console.log(`Found ${orders.length} orders`); // Debug log
 
-    // 3️⃣ **Revenue Breakdown by Month** (Sum of transaction amounts)
-    const revenue = await prisma.transaction.groupBy({
-      by: ["createdAt"],
-      _sum: { amount: true },
-      orderBy: { createdAt: "asc" },
-    });
+        // Process orders into monthly data
+        const monthlyData = new Map();
 
-    const revenueData = revenue.map((r) => ({
-      month: new Date(r.createdAt).toLocaleString("en-US", { month: "short" }),
-      revenue: r._sum?.amount?.toNumber() ?? 0,
-    }));
+        orders.forEach(order => {
+            const date = new Date(order.createdAt);
+            const monthKey = date.toLocaleString('en-US', { 
+                month: 'short', 
+                year: 'numeric' 
+            });
 
-    // 4️⃣ **Order Status Breakdown** (Count orders per status)
-    const orderStats = await prisma.order.groupBy({
-      by: ["status"],
-      _count: { status: true },
-    });
+            const orderTotal = order.items.reduce((sum, item) => 
+                sum + (Number(item.price) * item.quantity), 0);
 
-    const orderData = orderStats.map((o) => ({
-      status: o.status,
-      count: o._count.status,
-    }));
+            if (!monthlyData.has(monthKey)) {
+                monthlyData.set(monthKey, {
+                    total: 0,
+                    completed: 0,
+                    count: 0,
+                    completedCount: 0
+                });
+            }
 
-    // 5️⃣ **Customer Purchase Frequency** (Top 5 active customers)
-    const customerFrequency = await prisma.order.groupBy({
-      by: ["customerId"],
-      _count: { id: true },
-      orderBy: { _count: { id: "desc" } },
-      take: 5,
-    });
+            const monthData = monthlyData.get(monthKey);
+            monthData.total += orderTotal;
+            monthData.count += 1;
 
-    const customerData = await Promise.all(
-      customerFrequency.map(async (customer) => {
-        const user = await prisma.user.findUnique({
-          where: { id: customer.customerId },
-          select: { name: true },
+            if (order.status.toLowerCase() === 'completed') {
+                monthData.completed += orderTotal;
+                monthData.completedCount += 1;
+            }
         });
-        return {
-          customer: user?.name || "Unknown",
-          ordersPlaced: customer._count.id,
-        };
-      })
-    );
 
-    // Final JSON Response
-    return NextResponse.json({
-      sales: salesData, // Use the aggregated sales data
-      bestSelling: bestSellingData,
-      revenue: revenueData,
-      orders: orderData,
-      customers: customerData,
-    });
-  } catch (error) {
-    console.error("Error fetching insights:", error);
-    return NextResponse.json({ error: "Failed to fetch insights" }, { status: 500 });
-  }
+        // Convert to array and calculate completion rates
+        const salesData = Array.from(monthlyData.entries()).map(([date, data]) => ({
+            date,
+            total: Number(data.total.toFixed(2)),
+            completed: Number(data.completed.toFixed(2)),
+            completionRate: data.count > 0 
+                ? Number(((data.completedCount / data.count) * 100).toFixed(1))
+                : 0
+        }));
+
+        // Best-Selling Products (Top 5)
+        const bestSelling = await prisma.orderItem.groupBy({
+            by: ["productId"],
+            where: whereClause,
+            _sum: { quantity: true },
+            orderBy: { _sum: { quantity: "desc" } },
+            take: 5,
+        });
+
+        const bestSellingData = await Promise.all(
+            bestSelling.map(async (item) => {
+                const product = await prisma.product.findUnique({
+                    where: { id: item.productId },
+                    select: { catalog: { select: { name: true } } },
+                });
+                return {
+                    product: product?.catalog.name || "Unknown",
+                    quantitySold: item._sum?.quantity ?? 0,
+                };
+            })
+        );
+
+        // Revenue Breakdown
+        const revenue = await prisma.order.groupBy({
+            by: ['createdAt'],
+            where: whereClause,
+            _sum: {
+                total: true
+            },
+            orderBy: {
+                createdAt: 'asc'
+            }
+        });
+
+        const revenueData = revenue.map((r) => ({
+          createdAt: r.createdAt,
+          _sum: {
+              total: Number(r._sum.total?.toFixed(2)) || 0,
+          },
+          month: new Date(r.createdAt).toLocaleString('en-US', {
+              month: 'short',
+              year: 'numeric'
+          }),
+      }));
+
+        // Order Status Breakdown
+        const orderStats = await prisma.order.groupBy({
+            by: ["status"],
+            where: whereClause,
+            _count: { status: true },
+        });
+
+        const orderData = orderStats.map((o) => ({
+            status: o.status,
+            count: o._count.status,
+        }));
+
+        // Customer Purchase Frequency
+        const customerFrequency = await prisma.order.groupBy({
+            by: ["customerId"],
+            where: whereClause,
+            _count: { id: true },
+            orderBy: { _count: { id: "desc" } },
+            take: 5,
+        });
+
+        const customerData = await Promise.all(
+            customerFrequency.map(async (customer) => {
+                const user = await prisma.user.findUnique({
+                    where: { id: customer.customerId },
+                    select: { name: true },
+                });
+                return {
+                    customer: user?.name || "Unknown",
+                    ordersPlaced: customer._count.id,
+                };
+            })
+        );
+
+        // Return all data
+        return NextResponse.json({
+            sales: salesData,
+            bestSelling: bestSellingData,
+            revenue: revenueData,
+            orders: orderData,
+            customers: customerData,
+        });
+
+    } catch (error) {
+        console.error("Error in insights route:", error);
+        return NextResponse.json(
+            { error: "Failed to fetch insights" },
+            { status: 500 }
+        );
+    }
 }

@@ -1,186 +1,161 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useProfile } from "./ProfileContext";
+import { useRouter } from "next/navigation";
 
 interface ProfileData {
-  firstName?: string;
-  lastName?: string;
+  name: string; // Single name field from DB
   email: string;
+  profilePic?: string;
 }
 
 interface ProfileDetailsProps {
-  profileData: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    profilePic: string;
-  };
+  profileData: ProfileData;
   onProfileUpdate: (data: Partial<ProfileData>) => Promise<void>;
   isUpdating: boolean;
 }
 
-const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileUpdate }) => {
+const ProfileDetails: React.FC<ProfileDetailsProps> = ({ profileData, onProfileUpdate, isUpdating }) => {
   const { data: session } = useSession();
+  const { updateProfile } = useProfile();
+  const router = useRouter();
+  
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(profileData);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: profileData.email,
+  });
 
-  // Ensure data is populated from session if missing
+  // Split name into first and last name when profile data changes
   useEffect(() => {
-    if (session?.user?.id) {
-      const fullName = session.user.name || "";
-      const [firstName, lastName] = fullName.split(" ");
-
-      setFormData({
-        firstName: profileData.firstName || firstName || "",
-        lastName: profileData.lastName || lastName || "",
-        email: profileData.email || session.user.email || "",
-        profilePic: profileData.profilePic,
-      });
+    if (profileData.name) {
+      const [firstName = '', lastName = ''] = profileData.name.split(' ');
+      setFormData(prev => ({
+        ...prev,
+        firstName,
+        lastName,
+        email: profileData.email,
+      }));
     }
-  }, [session, profileData]);
+  }, [profileData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!session?.user?.id) return;
-    if (
-      formData.firstName === profileData.firstName &&
-      formData.lastName === profileData.lastName &&
-      formData.email === profileData.email
-    ) {
-      setIsEditing(false);
-      return;
-    }
-
-    setIsEditing(false);
-    setIsUpdating(true);
-    const updatedProfile = {
-      name: `${formData.firstName} ${formData.lastName}`,
-      email: formData.email,
-    };
-
-    const controller = new AbortController();
-    const signal = controller.signal;
-
+    
     try {
-      const res = await fetch(`/api/users/${session.user.id}`,{
-        method: "PUT",
-        headers: { "Content-Type": "application/json"},
-        body: JSON.stringify(updatedProfile),
-        signal: signal,
+      await onProfileUpdate({
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
       });
-      if (!res.ok) throw new Error("Failed to update profile");
-      const data = await res.json();
-      const nameParts = data.name.trim().split(" ");
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || ""
-
-      await onProfileUpdate({ firstName, lastName, email: data.email, });
-
-      await fetch (`/api/users/${session.user.id}`, {cache: "no-store", signal: signal});
-    }  catch (err) {
-      if (err instanceof Error) {
-      if (err.name === 'AbortError') {
-        console.log('Fetch aborted');
-      } else {
-        console.error("Profile update error:", err.message);
-        alert("Error updating profile. Please try again.");
-      }
-    } else {
-      console.error("An unknown error occurred.");
-    }
-    } finally {
-        controller.abort();
-        setIsUpdating(false);
+      setIsEditing(false);  // Disable editing after successful update
+    } catch (error) {
+      console.error("Profile update error:", error);
+      alert("Failed to update profile. Please try again.");
     }
   };
 
   return (
-    <div className="p-6 bg-[#0f0c29] rounded-2xl mb-2 shadow-lg neon-glow">
-      <h2 className="text-xl font-semibold text-white mb-4">Profile Details</h2>
-
-      <div className="space-y-4">
+    <form onSubmit={handleSave} className="space-y-4 bg-[#0f0c29] p-6 rounded-lg shadow-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="first-name" className="text-gray-300 block mb-1">First Name</label>
-          {isEditing ? (
-            <input
-              id="first-name"
-              name="firstName"
-              type="text"
-              value={formData.firstName}
-              onChange={handleChange}
-              className="w-full bg-gray-800 text-white p-2 rounded-md outline-none border border-gray-600 focus:border-purple-500"
-            />
-          ) : (
-            <p className="text-white">{formData.firstName || "N/A"}</p>
-          )}
+          <label htmlFor="firstName" className="block text-sm font-medium text-gray-300 mb-1">
+            First Name
+          </label>
+          <input
+            type="text"
+            id="firstName"
+            name="firstName"
+            value={formData.firstName || ''}
+            onChange={handleChange}
+            disabled={!isEditing}
+            placeholder="Enter your first name"
+            aria-label="First Name"
+            className={`w-full p-2 rounded ${!isEditing ? 'bg-gray-800' : 'bg-gray-700'} text-white border ${
+              isEditing ? 'border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500' 
+              : 'border-transparent'
+            }`}
+          />
         </div>
-
         <div>
-          <label htmlFor="last-name" className="text-gray-300 block mb-1">Last Name</label>
-          {isEditing ? (
-            <input
-              id="last-name"
-              name="lastName"
-              type="text"
-              value={formData.lastName}
-              onChange={handleChange}
-              className="w-full bg-gray-800 text-white p-2 rounded-md outline-none border border-gray-600 focus:border-purple-500"
-            />
-          ) : (
-            <p className="text-white">{formData.lastName || "N/A"}</p>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="email" className="text-gray-300 block mb-1">Email</label>
-          {isEditing ? (
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full bg-gray-800 text-white p-2 rounded-md outline-none border border-gray-600 focus:border-purple-500"
-            />
-          ) : (
-            <p className="text-white">{formData.email || "N/A"}</p>
-          )}
+          <label htmlFor="lastName" className="block text-sm font-medium text-gray-300 mb-1">
+            Last Name
+          </label>
+          <input
+            type="text"
+            id="lastName"
+            name="lastName"
+            value={formData.lastName}
+            onChange={handleChange}
+            disabled={!isEditing}
+            placeholder="Enter your last name"
+            aria-label="Last Name"
+            className={`w-full p-2 rounded ${!isEditing ? 'bg-gray-800' : 'bg-gray-700'} text-white border ${
+              isEditing ? 'border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500' 
+              : 'border-transparent'
+            }`}
+          />
         </div>
       </div>
-
-      <div className="mt-4 flex gap-4">
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+          Email
+        </label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          disabled={!isEditing}
+          placeholder="Enter your email address"
+          aria-label="Email Address"
+          className={`w-full p-2 rounded ${!isEditing ? 'bg-gray-800' : 'bg-gray-700'} text-white border ${
+            isEditing ? 'border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500' 
+            : 'border-transparent'
+          }`}
+        />
+      </div>
+      <div className="flex justify-end space-x-4">
         {isEditing ? (
           <>
-            <button 
-              type="submit"
+            <button
+              type="button"
+              onClick={() => setIsEditing(false)}
+              className="px-4 py-2 text-gray-300 hover:text-white"
               disabled={isUpdating}
-              className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-900 cursor-pointer transition-all flex items-center justify-center gap-2"
             >
-              {isUpdating ? (
-                <>
-                  Updating...
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </button>
-            <button onClick={() => setIsEditing(false)} className="bg-red-600 px-4 py-2 rounded-md text-white hover:bg-red-500 transition">
               Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 disabled:opacity-50"
+              disabled={isUpdating}
+            >
+              {isUpdating ? 'Saving...' : 'Save Changes'}
             </button>
           </>
         ) : (
-          <button onClick={() => setIsEditing(true)} className="bg-blue-600 px-4 py-2 rounded-md text-white hover:bg-blue-500 transition">
-            Edit
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500"
+          >
+            Edit Profile
           </button>
         )}
       </div>
-    </div>
+    </form>
   );
 };
 

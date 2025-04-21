@@ -1,9 +1,11 @@
 import React from "react";
 import { Order } from "../../app/types";
+import Spinner from "../ui/Spinner";
 
 interface OrderListProps {
   orders: Order[];
   onOpenModal: (order: Order) => void;
+  isLoading?: boolean;
 }
 
 // Status color mapping
@@ -14,7 +16,16 @@ const statusColors: Record<string, string> = {
   cancelled: "text-red-400",
 };
 
-const OrderList: React.FC<OrderListProps> = ({ orders, onOpenModal }) => {
+const OrderList: React.FC<OrderListProps> = ({ orders, onOpenModal, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 p-4 bg-gray-800 rounded-lg">
+        <p>Loading orders</p>
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-900 p-4 rounded-lg shadow-lg">
       <table className="w-full text-white">

@@ -8,7 +8,7 @@ import { headers } from "next/headers";
 // GET: Fetch a single user by ID
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const id = await params.id;
+    const id = params.id; // Remove await here
     const user = await prisma.user.findUnique({
       where: { id },
       select: { id: true, name: true, email: true, role: true, createdAt: true }
@@ -30,33 +30,21 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     
-    // Check authentication
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const updates = await req.json();
-    
-    // Create a sanitized update object
     const allowedUpdates: any = {};
-    
-    // Handle regular fields
-    if (updates.name) allowedUpdates.name = updates.name;
-    if (updates.email) allowedUpdates.email = updates.email;
-    
-    // Handle role updates - only admins can change roles
-    if (updates.role) {
-      if (session.user.role !== 'admin') {
-        return NextResponse.json({ error: "Only admins can update roles" }, { status: 403 });
-      }
-      allowedUpdates.role = updates.role;
+
+    // Handle name update directly
+    if (updates.name) {
+      allowedUpdates.name = updates.name;
     }
-    
-    // Handle password updates
-    if (updates.password) {
-      // Add password validation if needed
-      const hashedPassword = await bcrypt.hash(updates.password, 10);
-      allowedUpdates.password = hashedPassword;
+
+    // Handle email update
+    if (updates.email) {
+      allowedUpdates.email = updates.email;
     }
 
     const updatedUser = await prisma.user.update({
@@ -67,14 +55,13 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
         name: true,
         email: true,
         role: true,
-        createdAt: true
       }
     });
 
     return NextResponse.json(updatedUser);
   } catch (error) {
     console.error("Update error:", error);
-    return NextResponse.json({ error: "Failed to update user", details: error }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
   }
 }
 

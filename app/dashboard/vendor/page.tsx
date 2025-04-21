@@ -16,6 +16,7 @@ import { useSession } from "next-auth/react"
 import type { Order, OrderStatus } from "../../types"
 import { useProfile } from "../../../components/profile/ProfileContext"
 import ErrorBoundary from "../../../components/auth/ErrorBoundary"
+import Spinner from "../../../components/ui/Spinner"
 
 // Define a ShopProduct interface to match your actual product data structure
 // This is different from the Product type in types.ts
@@ -339,7 +340,10 @@ const VendorDashboard = () => {
           <h2 className="text-xl font-semibold text-white">Your Products</h2>
         </div>
         {loading ? (
-          <p className="text-gray-400">Loading products...</p>
+          <div className="flex items-center gap-2 text-gray-400">
+            <p>Loading products</p>
+            <Spinner />
+          </div>
         ) : (
           <>
             {displayProducts.length > 0 ? (

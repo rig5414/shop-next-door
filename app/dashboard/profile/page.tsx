@@ -10,10 +10,9 @@ import { useRouter } from "next/navigation";
 
 // Define the profile type to match component expectations
 type ProfileData = {
-  firstName: string;
-  lastName: string;
+  name: string;  // Changed from firstName/lastName to match DB structure
   email: string;
-  profilePic: string;
+  profilePic?: string;
 };
 
 const Spinner = () => (
@@ -30,91 +29,88 @@ const ProfilePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === "loading" || !session?.user?.id) return; // Wait for session to load
+    if (status === "loading" || !session?.user?.id) return;
 
     if (!session || !session.user) {
-      router.push("/auth/login");
+      router.push("/auth/signin");
       return;
     }
 
-    if (!session.user.id) return;
-
-    const controller = new AbortController();
-
-    // Fetch user profile using session user ID
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`/api/users/${session.user.id}`, { signal: controller.signal });
+        const res = await fetch(`/api/users/${session.user.id}/`); // Added trailing slash
         if (!res.ok) throw new Error("Failed to fetch profile");
 
         const data = await res.json();
         setProfileData({
-          firstName: data.firstName || "",
-          lastName: data.lastName || "",
+          name: data.name || "",
           email: data.email || "",
-          profilePic: data.profilePic || "/default-profile.png", // Default if missing
+          profilePic: data.profilePic || "/default-profile.png",
         });
 
-        setRole(data.role); // Set role from API response
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-        setError(err instanceof Error ? err.message : "Something went wrong.");
-      } else {
-        setError("An unknown error occurred");
-      }
+        setRole(data.role);
+      } catch (err) {
+        // Only set error if it's not an abort error
+        if (err instanceof Error && err.name !== 'AbortError') {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchProfile();
-    return () => controller.abort();
   }, [session, status, router]);
 
   // Function to update profile state correctly
   const handleProfileUpdate = async (updatedData: Partial<ProfileData>) => {
     setUpdating(true);
     try {
-      if (!session?.user?.id) return;
+      if (!session?.user?.id) {
+        throw new Error('No user ID found');
+      }
 
       const response = await fetch(`/api/users/${session.user.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update profile');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update profile');
       }
 
       const updatedProfile = await response.json();
-      
-      // Update local state with the new data
+
+      // Update local state
       setProfileData(prev => prev ? {
         ...prev,
-        firstName: updatedProfile.firstName || prev.firstName,
-        lastName: updatedProfile.lastName || prev.lastName,
-        email: updatedProfile.email || prev.email,
-        profilePic: updatedProfile.profilePic || prev.profilePic,
-      } : prev);
+        name: updatedProfile.name,
+        email: updatedProfile.email,
+      } : null);
 
-      // Update the session using the update method from useSession
+      // Update session
       await update({
         ...session,
         user: {
           ...session?.user,
-          name: `${updatedProfile.firstName} ${updatedProfile.lastName}`,
+          name: updatedProfile.name,
           email: updatedProfile.email,
-          image: updatedProfile.profilePic,
         }
       });
 
-      // Force a router refresh to update the UI
-      router.refresh();
-
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('profileUpdated', {
+        detail: {
+          name: updatedProfile.name,
+          email: updatedProfile.email,
+          image: session?.user?.image,
+          timestamp: Date.now(),
+        }
+      }));
     } catch (err) {
+      console.error('Update error:', err);
       setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
       setUpdating(false);

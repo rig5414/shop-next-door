@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import type { OrderStatus } from "../../app/types"
+import Spinner from "../ui/Spinner"
 
 interface OrderDetailsDrawerProps {
   order: any
@@ -10,6 +11,7 @@ interface OrderDetailsDrawerProps {
   onUpdateStatus: (orderId: string, newStatus: OrderStatus) => void | Promise<void>
   onRefund: (orderId: string) => void
   onDelete: (orderId: string) => void
+  isLoading?: boolean
 }
 
 const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
@@ -18,6 +20,7 @@ const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
   onUpdateStatus,
   onRefund,
   onDelete,
+  isLoading,
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<string>("")
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
@@ -188,8 +191,23 @@ const OrderDetailsDrawer: React.FC<OrderDetailsDrawerProps> = ({
           </div>
 
           <button
+            onClick={() => onUpdateStatus(order.id, selectedStatus as OrderStatus)}
+            disabled={isLoading}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <span>Updating</span>
+                <Spinner />
+              </>
+            ) : (
+              "Update Status"
+            )}
+          </button>
+
+          <button
             onClick={() => setShowConfirmDelete(true)}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors w-full text-sm"
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors w-full text-sm mt-2"
           >
             Delete Order
           </button>

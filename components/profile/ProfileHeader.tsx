@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { useProfile } from "./ProfileContext";
+import { useSession } from "next-auth/react";
 
 const DEFAULT_AVATARS = [
   "/images/avatar1.jpg",
@@ -14,10 +16,44 @@ const DEFAULT_AVATARS = [
 ];
 
 const ProfileHeader = () => {
-  const { profile, updateProfile } = useProfile(); // Get user profile from context
-  const [selectedAvatar, setSelectedAvatar] = useState(profile.profilePic);
+  const router = useRouter();
+  const { profile } = useProfile();
+  const { data: session, update } = useSession();
+  const [selectedAvatar, setSelectedAvatar] = useState(session?.user?.image || "/images/avatar1.jpg");
+  const [userName, setUserName] = useState(session?.user?.name || '');
   const [isAvatarSelectionOpen, setIsAvatarSelectionOpen] = useState(false);
-  const [isAvatarChanged, setIsAvatarChanged] = useState(false); // Track if the avatar has changed
+  const [isAvatarChanged, setIsAvatarChanged] = useState(false);
+
+  useEffect(() => {
+    const updateLocalState = () => {
+      if (session?.user) {
+        setUserName(session.user.name || '');
+        setSelectedAvatar(session.user.image || "/images/avatar1.jpg");
+      }
+    };
+
+    updateLocalState();
+
+    const handleProfileUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const updatedProfile = customEvent.detail;
+      console.log("Profile update event received:", updatedProfile);
+
+      if (updatedProfile.name) {
+        setUserName(updatedProfile.name);
+        console.log("Updated name to:", updatedProfile.name);
+      }
+      if (updatedProfile.image) {
+        setSelectedAvatar(updatedProfile.image);
+        console.log("Updated image to:", updatedProfile.image);
+      }
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, [session]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -27,8 +63,36 @@ const ProfileHeader = () => {
     }
   };
 
+  const handleSaveAvatar = async () => {
+    try {
+      const currrentName = userName || session?.user?.name || '';
+      // Update session with new avatar
+      await update({
+        ...session,
+        user: {
+          ...session?.user,
+          name: currrentName,
+          image: selectedAvatar,
+        }
+      });
+
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('profileUpdated', {
+        detail: {
+          name: currrentName,
+          image: selectedAvatar,
+          timestamp: Date.now(),
+        }
+      }));
+
+      setIsAvatarChanged(false);
+    } catch (error) {
+      console.error('Failed to update avatar:', error);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center mb-1 gap-4 p-6 bg-[#0f0c29] rounded-2xl shadow-lg neon-glow">
+    <div className="flex flex-col items-center mb-2 gap-4 p-6 bg-[#0f0c29] rounded-2xl shadow-lg neon-glow">
       <div className="relative">
         <Image
           src={selectedAvatar}
@@ -58,24 +122,19 @@ const ProfileHeader = () => {
       </div>
 
       <h2 className="text-xl font-semibold text-white">
-        {profile.firstName} {profile.lastName}
+        {userName || 'Loading...'}
       </h2>
       <p className="text-sm text-gray-300 capitalize">{profile.role}</p>
 
-      {/* Show "Save Changes" only if avatar has changed */}
       {isAvatarChanged && (
         <button
-          onClick={() => {
-            updateProfile({ ...profile, profilePic: selectedAvatar });
-            setIsAvatarChanged(false); // Reset after saving
-          }}
+          onClick={handleSaveAvatar}
           className="bg-green-600 px-4 py-2 text-white rounded-md hover:bg-green-500 transition"
         >
           Save Changes
         </button>
       )}
 
-      {/* Avatar Selection */}
       <button
         onClick={() => setIsAvatarSelectionOpen(!isAvatarSelectionOpen)}
         className="text-sm text-blue-400 hover:text-blue-300 transition"
