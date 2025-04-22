@@ -14,6 +14,7 @@ import SalesDayCard from "../../../../components/dashboard/insights/SalesDayCard
 import ErrorBoundary from "../../../../components/auth/ErrorBoundary";
 import { fetchInsights } from "../../../../lib/fetchInsights";
 import { useEffect, useState } from "react";
+import Spinner from "../../../../components/ui/Spinner";
 
 const Insights = () => {
   const [insightsData, setInsightsData] = useState<any | null>(null);
@@ -28,7 +29,7 @@ const Insights = () => {
 
   // Updated debugging code with TypeScript fixes
   useEffect(() => {
-   console.log('Debugging Chart.js controller error...');
+    console.log('Debugging Chart.js controller error...');
 
     if (typeof window !== 'undefined') {
       // Use type assertion to tell TypeScript that Chart might exist on window
@@ -39,30 +40,30 @@ const Insights = () => {
 
       // If Chart.js is available, check registered controllers
       if (windowWithChart.Chart) {
-          console.log('Chart.js version:', windowWithChart.Chart.version);
+        console.log('Chart.js version:', windowWithChart.Chart.version);
 
-          // Check if the registry exists
-          if (windowWithChart.Chart.registry) {
-              console.log('Chart.js registry exists');
+        // Check if the registry exists
+        if (windowWithChart.Chart.registry) {
+          console.log('Chart.js registry exists');
 
-              // Check if controllers exist in the registry
-              if (windowWithChart.Chart.registry.controllers) {
-                  const controllers = Object.keys(windowWithChart.Chart.registry.controllers);
-                  console.log('Registered controllers:', controllers);
-                  console.log('Bar controller registered:', controllers.includes('bar'));
-              } else {
-                  console.log('No controllers in registry');
-              }
+          // Check if controllers exist in the registry
+          if (windowWithChart.Chart.registry.controllers) {
+            const controllers = Object.keys(windowWithChart.Chart.registry.controllers);
+            console.log('Registered controllers:', controllers);
+            console.log('Bar controller registered:', controllers.includes('bar'));
           } else {
-              console.log('No registry in Chart.js');
+            console.log('No controllers in registry');
           }
         } else {
-          console.log('Chart.js not available on window');
+          console.log('No registry in Chart.js');
         }
       } else {
-      console.log('window is undefined');
+        console.log('Chart.js not available on window');
       }
-    }, []);
+    } else {
+      console.log('window is undefined');
+    }
+  }, []);
 
   if (!insightsData) {
     return <p className="text-white text-center">Loading insights...</p>;
@@ -77,9 +78,10 @@ const Insights = () => {
   return (
     <DashboardLayout role="admin">
       <div className="p-6 print:w-full print:ml-0 print:bg-white print:px-0">
-        <h2 className="text-2xl font-bold mb-4">Admin Insights</h2>
+        <h2 className="text-2xl font-bold mb-6">Admin Insights</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 print:grid-cols-2 print:gap-4">
+        {/* Chart Grid - Using auto-fit for responsive layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr mb-8">
           {[
             { title: "Best-Selling Products", Component: BestSellingChart },
             { title: "Sales Overview", Component: SalesChart },
@@ -89,56 +91,53 @@ const Insights = () => {
           ].map(({ title, Component }, index) => (
             <div
               key={index}
-              className="bg-gray-900 p-4 rounded-lg shadow-lg min-h-[250px] flex flex-col print:bg-white print:text-black print:shadow-none print:border print:border-gray-300"
+              className="h-[400px] bg-gray-900 rounded-lg shadow-lg overflow-hidden"
             >
-              <h3 className="text-lg font-semibold mb-2">{title}</h3>
-              <div className="flex-grow">
-                <ErrorBoundary>
-                  <Component />
-                </ErrorBoundary>
-              </div>
+              <ErrorBoundary>
+              <Component />
+              </ErrorBoundary>
             </div>
           ))}
         </div>
 
+        {/* Details Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          {insightsData.orders && <OrdersList title="Recent Orders" data={transformedOrders} />}
-          {insightsData.customers && <RepeatCustomers data={insightsData.customers} />}
-          {insightsData.revenue && <RevenueBreakdown data={insightsData.revenue} />}
-          {insightsData.sales && <SalesDayCard title="Sales Overview" data={insightsData.sales} />}
+          {insightsData?.customers && <RepeatCustomers data={insightsData.customers} />}
+          {insightsData?.revenue && <RevenueBreakdown data={insightsData.revenue} />}
         </div>
 
         <InsightsDetails data={insightsData}/>
       </div>
 
-      <style jsx global>{`
-        @media print {
-          .sidebar,
+      {/* Existing print styles */}
+      <style jsx global>
+        {`
+          @media print {
+            .sidebar,
             nav,
             header,
             footer,
             .dashboard-sidebar {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            position: absolute !important;
-            left: -9999px !important;
-            width: 0 !important;
-            height: 0 !important;
+              visibility: hidden !important;
+              opacity: 0 !important;
+              width: 0 !important;
+              height: 0 !important;
+              display: none !important;
+              position: absolute !important;
+              left: -9999px !important;
+            }
+            main {
+              width: 100% !important;
+              margin-left: 0 !important;
+              padding: 0 !important;
+            }
+            body {
+              color: #000 !important;
+              background: #fff !important;
+            }
           }
-
-          main {
-            margin-left: 0 !important;
-            width: 100% !important;
-            padding: 0 !important;
-          }
-
-          body {
-            background: white !important;
-            color: black !important;
-          }
-        }
-      `}</style>
+        `}
+      </style>
     </DashboardLayout>
   );
 };

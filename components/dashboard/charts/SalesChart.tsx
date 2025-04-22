@@ -291,14 +291,14 @@ const SalesChart = ({ className = "" }) => {
 
     return (
         <div className={cn(
-            "bg-gray-800 p-6 rounded-lg shadow-md",
+            "bg-gray-800 p-6 rounded-lg shadow-md w-full h-full",
             "hover:opacity-80 transition-opacity",
             className
         )}>
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-white text-xl font-semibold">Sales History</h2>
             </div>
-            <div className="h-[300px] w-full relative">
+            <div className="h-[calc(100%-4rem)] w-full relative min-h-[300px]">
                 {error ? (
                     <div className="absolute inset-0 flex items-center justify-center text-red-400">
                         <p>{error}</p>

@@ -1,77 +1,56 @@
-import React from "react";
-import { RevenueData } from "./interface";
+"use client";
+
+import React, { useMemo } from "react";
+
+interface RevenueData {
+  _sum: {
+    total: number;
+  };
+  month: string;
+}
 
 interface RevenueBreakdownProps {
-  data: any; // Use 'any' to handle different data structures
+  data: RevenueData[];
 }
 
 const RevenueBreakdown: React.FC<RevenueBreakdownProps> = ({ data }) => {
-  if (!data) {
-    return <div className="text-gray-400 text-sm">No revenue data available.</div>;
-  }
+  // Sort months in descending order (most recent first)
+  const sortedData = useMemo(() => {
+    return [...data].sort((a, b) => {
+      const dateA = new Date(a.month);
+      const dateB = new Date(b.month);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [data]);
 
-  // Case 1: If data has month and revenue properties
-  if (data.month !== undefined && data.revenue !== undefined) {
-    return (
-      <div className="bg-gray-800 p-4 rounded-lg shadow-md">
-        <h4 className="text-lg font-semibold text-white mb-3">Revenue Breakdown</h4>
-        <div className="text-gray-300 space-y-2">
-          <div className="border-b border-gray-700 pb-2">
-            <span className="font-semibold">{data.month}</span>
-            : KES {typeof data.revenue === 'number' ? data.revenue.toLocaleString() : data.revenue}
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // Case 2: If data has category and totalRevenue properties (as per interface)
-  if (data.category !== undefined && data.totalRevenue !== undefined) {
-    return (
-      <div className="bg-gray-800 p-4 rounded-lg shadow-md">
-        <h4 className="text-lg font-semibold text-white mb-3">Revenue Breakdown</h4>
-        <div className="text-gray-300 space-y-2">
-          <div className="border-b border-gray-700 pb-2">
-            <span className="font-semibold">
-              {typeof data.category === 'string' 
-                ? data.category.charAt(0).toUpperCase() + data.category.slice(1) 
-                : String(data.category)}
-            </span>
-            : KES {typeof data.totalRevenue === 'number' ? data.totalRevenue.toLocaleString() : data.totalRevenue}
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // Case 3: If data is an object with arbitrary keys (fallback)
+  const totalRevenue = useMemo(() => {
+    return data.reduce((sum, item) => sum + item._sum.total, 0);
+  }, [data]);
+
   return (
     <div className="bg-gray-800 p-4 rounded-lg shadow-md">
-      <h4 className="text-lg font-semibold text-white mb-3">Revenue Breakdown</h4>
-      <ul className="text-gray-300 space-y-2">
-        {Object.entries(data).map(([key, value], index) => {
-          // Skip rendering if value is an object (to prevent the React child error)
-          if (typeof value === 'object' && value !== null) {
-            return (
-              <li key={index} className="border-b border-gray-700 pb-2">
-                <span className="font-semibold">
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                </span>
-                : [Complex Data]
-              </li>
-            );
-          }
-          
-          return (
-            <li key={index} className="border-b border-gray-700 pb-2">
-              <span className="font-semibold">
-                {key.charAt(0).toUpperCase() + key.slice(1)}
+      <div className="flex justify-between items-center mb-4">
+        <h4 className="text-lg font-semibold text-white">Sales Overview</h4>
+        <div className="text-right">
+          <p className="text-sm text-gray-400">Total Sales</p>
+          <p className="text-xl font-bold text-white">
+            KES {totalRevenue.toLocaleString()}
+          </p>
+        </div>
+      </div>
+      <div className="mt-4">
+        <h5 className="text-md font-semibold text-white mb-3">Monthly Revenue</h5>
+        <ul className="text-gray-300 space-y-2">
+          {sortedData.map((item) => (
+            <li key={item.month} className="flex justify-between items-center border-b border-gray-700 pb-2">
+              <span className="font-medium">{item.month}</span>
+              <span className="text-green-400">
+                KES {item._sum.total.toLocaleString()}
               </span>
-              : {typeof value === 'number' ? `KES ${value.toLocaleString()}` : String(value)}
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

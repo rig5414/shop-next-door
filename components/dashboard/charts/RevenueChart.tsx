@@ -108,43 +108,46 @@ const RevenueChart = ({ className = "" }) => {
     );
   };
   
-  
   return (
-    <div
-      className={`bg-gray-800 p-4 rounded-lg shadow-md hover:opacity-80 transition-opacity ${className}`}
-    >
+    <div className="bg-gray-800 p-4 rounded-lg shadow-md w-full h-full flex flex-col">
       <h2 className="text-white text-xl font-semibold mb-3">
         Monthly Revenue Breakdown
       </h2>
-      <ResponsiveContainer width="100%" height={300} minWidth={250}>
-        <PieChart>
-          <Pie
-            data={chartData}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="45%"
-            outerRadius={60}
-            paddingAngle={2}
-          >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={1} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomPieTooltip />} />
-
-          <Legend
-            layout="horizontal"
-            align="center"
-            verticalAlign="bottom"
-            wrapperStyle={{ marginTop: 12 }}
-            formatter={(value: string) => {
-              const entry = chartData.find((d) => d.name === value);
-              return entry ? `${value}: ${formatValue(entry.value)}` : value;
-            }}
-          />
-        </PieChart>
-      </ResponsiveContainer>
+      <div className="flex-1 min-h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius="80%"
+              innerRadius="55%"
+              paddingAngle={2}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={1} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomPieTooltip />} />
+            <Legend
+              layout="horizontal"
+              align="center"
+              verticalAlign="bottom"
+              wrapperStyle={{ 
+                paddingTop: '20px',
+                width: '100%',
+                fontSize: '12px'
+              }}
+              formatter={(value: string) => {
+                const entry = chartData.find((d) => d.name === value);
+                return entry ? `${value}: ${formatValue(entry.value)}` : value;
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };

@@ -1,49 +1,39 @@
+"use client";
+
 interface SalesDayData {
   day: string;
   products: string;
   quantity: number;
-  shop: string;
   time: string;
+  shop: string;
 }
 
 interface SalesDayCardProps {
   title: string;
-  data?: SalesDayData;
+  data: SalesDayData;
 }
 
 const SalesDayCard: React.FC<SalesDayCardProps> = ({ title, data }) => {
-  if (!data) {
-    return (
-      <div className="bg-gray-800 p-4 rounded-lg text-center text-gray-400">
-        No sales data available.
-      </div>
-    );
-  }
-
   return (
     <div className="bg-gray-800 p-4 rounded-lg shadow-md">
-      <h4 className="text-lg font-semibold text-white mb-3">
-        {title && title !== "Sales on undefined" 
-          ? title 
-          : "Daily Sales"}: <span className="text-yellow-400">{data.day || "N/A"}</span>
-      </h4>
-      <div className="space-y-2">
-        <p className="text-gray-300">
-          <span className="font-semibold text-white">Products Sold:</span>{" "}
-          {data.products && data.products !== "undefined" ? data.products : "0"}
-        </p>
-        <p className="text-gray-300">
-          <span className="font-semibold text-white">Quantity:</span>{" "}
-          {data.quantity || 0}
-        </p>
-        <p className="text-gray-300">
-          <span className="font-semibold text-white">Shop:</span>{" "}
-          {data.shop || "N/A"}
-        </p>
-        <p className="text-gray-300">
-          <span className="font-semibold text-white">Transaction Time:</span>{" "}
-          {data.time || "N/A"}
-        </p>
+      <h4 className="text-lg font-semibold text-white mb-3">{title}</h4>
+      <div className="space-y-3">
+        <div className="flex justify-between">
+          <span className="text-gray-400">Total Sales</span>
+          <span className="font-medium text-white">
+            KES {Number(data.products).toLocaleString()}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Completion Rate</span>
+          <span className="font-medium text-green-400">
+            {data.quantity}%
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-400">Period</span>
+          <span className="font-medium text-white">{data.day}</span>
+        </div>
       </div>
     </div>
   );

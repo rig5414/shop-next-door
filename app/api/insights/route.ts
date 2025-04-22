@@ -106,16 +106,25 @@ export async function GET(request: Request) {
             }
         });
 
-        const revenueData = revenue.map((r) => ({
-          createdAt: r.createdAt,
-          _sum: {
-              total: Number(r._sum.total?.toFixed(2)) || 0,
-          },
-          month: new Date(r.createdAt).toLocaleString('en-US', {
-              month: 'short',
-              year: 'numeric'
-          }),
-      }));
+        // Process revenue data to group by month
+        const monthlyRevenue = new Map();
+
+        revenue.forEach((r) => {
+            const monthKey = new Date(r.createdAt).toLocaleString('en-US', {
+                month: 'short',
+                year: 'numeric'
+            });
+
+            const total = Number(r._sum.total?.toFixed(2)) || 0;
+            monthlyRevenue.set(monthKey, (monthlyRevenue.get(monthKey) || 0) + total);
+        });
+
+        const revenueData = Array.from(monthlyRevenue.entries()).map(([month, total]) => ({
+            month,
+            _sum: {
+                total: Number(total.toFixed(2))
+            }
+        }));
 
         // Order Status Breakdown
         const orderStats = await prisma.order.groupBy({

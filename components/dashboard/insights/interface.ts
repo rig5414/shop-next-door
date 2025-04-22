@@ -1,35 +1,32 @@
 // interface.ts
 export interface SalesData {
-    day: string;
-    totalSales: number;
-    products: number;
-    quantity: number;
-    shop: string;
-    time: string;
-  }
-  
-  export interface OrderData {
-    status: string;
-    count: number;
-    customerName: string;
-    items: number;
-  }
-  
-  export interface CustomerData {
-    name: string;
-    totalOrders: number;
-    purchases: number;
-    shopName: string;
-  }
-  
-  export interface RevenueData {
-    category: string;
-    totalRevenue: number;
-  }
-  
-  export interface Insights {
-    sales: SalesData[];
-    orders: OrderData[];
-    customers: CustomerData[];
-    revenue: RevenueData[];
-  }
+  date: string;
+  total: number;
+  completed: number;
+  completionRate: number;
+}
+
+export interface OrderData {
+  status: string;
+  count: number;
+}
+
+export interface CustomerData {
+  customer: string;
+  ordersPlaced: number;
+}
+
+export interface RevenueData {
+  createdAt: string;
+  _sum: {
+    total: number;
+  };
+  month: string;
+}
+
+export interface Insights {
+  sales: SalesData[];
+  orders: OrderData[];
+  customers: CustomerData[];
+  revenue: RevenueData[];
+}

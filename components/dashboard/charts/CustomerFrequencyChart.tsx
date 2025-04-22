@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Spinner from "../../ui/Spinner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { useRouter } from "next/navigation";
 import { fetchInsights } from "../../../lib/fetchInsights";
@@ -8,8 +9,8 @@ import { fetchInsights } from "../../../lib/fetchInsights";
 const BAR_COLOR = "rgba(54, 162, 235, 0.6)";
 
 interface CustomerFrequencyData {
-    customer: string; // Changed from 'day' to 'customer'
-    ordersPlaced: number; // Changed from 'customers' to 'ordersPlaced'
+    customer: string;
+    ordersPlaced: number;
 }
 
 export default function CustomerFrequencyChart({ className = "" }) {
@@ -20,46 +21,69 @@ export default function CustomerFrequencyChart({ className = "" }) {
         async function fetchData() {
             try {
                 const insights = await fetchInsights();
-                console.log("Insights:", insights);
-
-                if (insights && insights.customers) { // Changed to insights.customers
-                    // Map the data to the correct format
+                if (insights && insights.customers) {
                     const mappedData: CustomerFrequencyData[] = insights.customers.map((customer: any) => ({
-                        customer: customer.customer, // Use customer name
-                        ordersPlaced: customer.ordersPlaced, // Use ordersPlaced count
+                        customer: customer.customer,
+                        ordersPlaced: customer.ordersPlaced,
                     }));
                     setData(mappedData);
-                    console.log("Customer Frequency Data:", mappedData);
-                } else {
-                    console.error("No customer data found in insights"); // Changed error message
                 }
             } catch (error) {
                 console.error("Error fetching customer frequency data:", error);
             }
         }
-
         fetchData();
     }, []);
 
     return (
-        <div
-            className={`bg-gray-800 p-4 rounded-lg shadow-md cursor-pointer hover:opacity-80 transition-opacity ${className}`}
-        >
+        <div className="bg-gray-800 p-4 rounded-lg shadow-md w-full h-full flex flex-col">
             <h2 className="text-white text-xl font-semibold mb-3">Customer Purchase Frequency</h2>
-
-            {data?.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={data}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="customer" stroke="#ffffff" /> {/* Changed dataKey to "customer" */}
-                        <YAxis stroke="#ffffff" />
-                        <Tooltip />
-                        <Bar dataKey="ordersPlaced" fill={BAR_COLOR} /> {/* Changed dataKey to "ordersPlaced" */}
-                    </BarChart>
-                </ResponsiveContainer>
-            ) : (
-                <p className="text-gray-400 text-sm text-center">Loading...</p>
-            )}
+            <div className="flex-1 min-h-[300px]">
+                {data?.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart 
+                            data={data}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                        >
+                            <CartesianGrid 
+                                strokeDasharray="3 3" 
+                                stroke="rgba(255,255,255,0.1)"
+                            />
+                            <XAxis 
+                                dataKey="customer" 
+                                stroke="#ffffff"
+                                tick={{ fill: '#ffffff' }}
+                                angle={-45}
+                                textAnchor="end"
+                                height={60}
+                            />
+                            <YAxis 
+                                stroke="#ffffff"
+                                tick={{ fill: '#ffffff' }}
+                            />
+                            <Tooltip
+                                contentStyle={{ 
+                                    backgroundColor: '#1f2937',
+                                    border: '1px solid #374151',
+                                    borderRadius: '0.375rem'
+                                }}
+                                labelStyle={{ color: '#ffffff' }}
+                                cursor={{ fill: 'rgba(255,255,255,0.1)' }}
+                            />
+                            <Bar 
+                                dataKey="ordersPlaced" 
+                                fill={BAR_COLOR}
+                                radius={[4, 4, 0, 0]}
+                            />
+                        </BarChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="flex items-center justify-center h-full">
+                        <p className="text-gray-400 text-sm">Loading...</p>
+                        <Spinner/>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
