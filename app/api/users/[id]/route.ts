@@ -47,6 +47,11 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
       allowedUpdates.email = updates.email;
     }
 
+    // Handle role update (only if admin)
+    if (updates.role && session.user.role === 'admin') {
+      allowedUpdates.role = updates.role;
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id },
       data: allowedUpdates,

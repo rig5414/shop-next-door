@@ -29,6 +29,10 @@ interface RevenueData {
   percentage: number;
 }
 
+const cn = (...classes: string[]): string => {
+  return classes.filter(Boolean).join(' ');
+}
+
 const RevenueChart = ({ className = "" }) => {
   const router = useRouter();
   const [chartData, setChartData] = useState<RevenueData[]>([]);
@@ -109,8 +113,14 @@ const RevenueChart = ({ className = "" }) => {
   };
   
   return (
-    <div className="bg-gray-800 p-4 rounded-lg shadow-md w-full h-full flex flex-col">
-      <h2 className="text-white text-xl font-semibold mb-3">
+    <div className={cn(
+      "bg-gray-800 p-6 rounded-lg shadow-md w-full h-full",
+      "hover:opacity-80 transition-opacity",
+      className
+  )}>
+
+    <div className="w-full h-full flex flex-col">
+      <h2 className="text-white text-xl font-semibold">
         Monthly Revenue Breakdown
       </h2>
       <div className="flex-1 min-h-[300px]">
@@ -148,6 +158,7 @@ const RevenueChart = ({ className = "" }) => {
           </PieChart>
         </ResponsiveContainer>
       </div>
+    </div>
     </div>
   );
 };

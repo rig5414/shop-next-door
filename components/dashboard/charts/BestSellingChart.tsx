@@ -32,6 +32,10 @@ interface BestSellingData {
     percentage?: number;
 }
 
+const cn = (...classes: string[]): string => {
+    return classes.filter(Boolean).join(' ');
+};
+
 export default function BestSellingChart({ className = "" }) {
     const router = useRouter();
     const [data, setData] = useState<BestSellingData[]>([]);
@@ -63,8 +67,13 @@ export default function BestSellingChart({ className = "" }) {
     }, []);
 
     return (
-        <div className="bg-gray-800 p-4 rounded-lg shadow-md w-full h-full flex flex-col">
-            <h2 className="text-white text-xl font-semibold mb-3">Best Selling Products</h2>
+        <div className={cn(
+            "bg-gray-800 p-6 rounded-lg shadow-md w-full h-full",
+            "hover:opacity-80 transition-opacity",
+            className
+        )}>
+        <div className="w-full h-full flex flex-col">
+            <h2 className="text-white text-xl font-semibold">Best Selling Products</h2>
             <div className="flex-1 min-h-[300px]">
                 {data.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -110,6 +119,7 @@ export default function BestSellingChart({ className = "" }) {
                     </div>
                 )}
             </div>
+        </div>
         </div>
     );
 }
