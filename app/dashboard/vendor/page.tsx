@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import DashboardLayout from "../../../components/layout/DashboardLayout"
 import DashboardHeader from "../../../components/dashboard/DashboardHeader"
 import DashboardStats from "../../../components/dashboard/DashboardStats"
@@ -46,6 +46,11 @@ const VendorDashboard = () => {
   const { profile } = useProfile()
   const vendorId = session?.user?.id
 
+  // Add new state for vendor details
+  const [vendorDetails, setVendorDetails] = useState({
+    firstName: "",
+    lastName: "",
+  })
   const [shopOpen, setShopOpen] = useState(true)
   const [orders, setOrders] = useState<Order[]>([])
   const [products, setProducts] = useState<ShopProduct[]>([])
@@ -58,34 +63,62 @@ const VendorDashboard = () => {
     totalOrders: 0,
     pendingOrders: 0,
   })
+  const [displayProducts, setDisplayProducts] = useState<ShopProduct[]>([])
 
   console.log("Vendor ID:", vendorId)
   console.log("Shop ID:", shopId)
 
-  // Fetch Shop ID first
-  useEffect(() => {
-    const fetchShop = async () => {
-      try {
-        setLoading(true)
-        const res = await fetch(`/api/shops?vendorId=${vendorId}`)
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error || "Failed to fetch shop data")
-        console.log("data for the shop: ", data)
-        if (data && data.length > 0) {
-          setShopId(data[0].id)
-          setShopOpen(data[0].status === "active")
-        }
-      } catch (error) {
-        console.error("Error fetching shop:", error)
-      } finally {
-        setLoading(false)
-      }
+  // Add new function to fetch vendor details
+  const fetchVendorDetails = useCallback(async () => {
+    if (!session?.user?.id) return
+    
+    try {
+      setLoading(true)
+      // Use userId instead of vendorId
+      const res = await fetch(`/api/users/${session.user.id}`)
+      if (!res.ok) throw new Error("Failed to fetch vendor details")
+      
+      const data = await res.json()
+      console.log("Fetched vendor data:", data) // Add this for debugging
+      
+      // Update to match the user table structure
+      setVendorDetails({
+        firstName: data.name?.split(' ')[0] || "",  // Split full name if needed
+        lastName: data.name?.split(' ')[1] || "",   // Get last name part
+      })
+    } catch (error) {
+      console.error("Error fetching vendor details:", error)
+    } finally {
+      setLoading(false)
     }
+  }, [session?.user?.id]) // Update dependency to session.user.id
 
-    if (vendorId) {
-      fetchShop()
+  // Fetch Shop ID first
+  const fetchShop = useCallback(async () => {
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/shops?vendorId=${vendorId}`)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to fetch shop data")
+      console.log("data for the shop: ", data)
+      if (data && data.length > 0) {
+        setShopId(data[0].id)
+        setShopOpen(data[0].status === "active")
+      }
+    } catch (error) {
+      console.error("Error fetching shop:", error)
+    } finally {
+      setLoading(false)
     }
   }, [vendorId])
+
+  // Add user details fetch to the initial useEffect
+  useEffect(() => {
+    if (!session?.user?.id) return
+
+    fetchVendorDetails()
+    fetchShop()
+  }, [session?.user?.id, fetchVendorDetails, fetchShop])
 
   // Fetch Orders once vendorId is available
   useEffect(() => {
@@ -127,6 +160,7 @@ const VendorDashboard = () => {
         const res = await fetch(`/api/products?shopId=${shopId}`)
         const data = await res.json()
         setProducts(data)
+        setDisplayProducts(getRandomProducts(data, 3))
       } catch (error) {
         console.error("Error fetching products:", error)
       } finally {
@@ -279,6 +313,20 @@ const VendorDashboard = () => {
     }
   }
 
+  const handleProductDelete = (productId: string) => {
+    // Update products list
+    setProducts(currentProducts => 
+      currentProducts.filter(product => product.id !== productId)
+    );
+
+    // Update display products
+    const updatedDisplayProducts = getRandomProducts(
+      products.filter(product => product.id !== productId),
+      3
+    );
+    setDisplayProducts(updatedDisplayProducts);
+  };
+
   // Get a subset of products for the dashboard (3-5 random products)
   const getRandomProducts = (products: ShopProduct[], count = 3): ShopProduct[] => {
     if (products.length <= count) return products
@@ -287,12 +335,13 @@ const VendorDashboard = () => {
     return [...products].sort(() => 0.5 - Math.random()).slice(0, count)
   }
 
-  const displayProducts = getRandomProducts(products, 3)
-
   return (
     <DashboardLayout role="vendor">
       <DashboardHeader
-        title={`Welcome, ${profile.firstName} ${profile.lastName}!`}
+        userName={vendorDetails.firstName && vendorDetails.lastName 
+        ? `${vendorDetails.firstName} ${vendorDetails.lastName}`
+        : session?.user?.name || "Vendor"}
+        title={`Welcome, ${vendorDetails.firstName || session?.user?.name?.split(' ')[0] || "Vendor"}!`}
         subtitle="Manage your products and track sales."
       />
 
@@ -341,13 +390,18 @@ const VendorDashboard = () => {
         </div>
         {loading ? (
           <div className="flex items-center gap-2 text-gray-400">
-            <p>Loading products</p>
+            <p>Loading products..</p>
             <Spinner />
           </div>
         ) : (
           <>
             {displayProducts.length > 0 ? (
-              <ProductList products={displayProducts} shopId={shopId} shopType="local_shop" />
+              <ProductList 
+                products={displayProducts} 
+                shopId={shopId} 
+                shopType="local_shop"
+                onProductDelete={handleProductDelete} 
+              />
             ) : (
               <p className="text-gray-400">No products available.</p>
             )}

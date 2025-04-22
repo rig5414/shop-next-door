@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
-import { useProfile } from "./ProfileContext";
-import { useSession } from "next-auth/react";
 
 const DEFAULT_AVATARS = [
   "/images/avatar1.jpg",
@@ -15,45 +12,28 @@ const DEFAULT_AVATARS = [
   "/images/avatar5.jpg",
 ];
 
-const ProfileHeader = () => {
-  const router = useRouter();
-  const { profile } = useProfile();
-  const { data: session, update } = useSession();
-  const [selectedAvatar, setSelectedAvatar] = useState(session?.user?.image || "/images/avatar1.jpg");
-  const [userName, setUserName] = useState(session?.user?.name || '');
+type ProfileHeaderProps = {
+  userName: string;
+  userRole: string;
+  currentAvatar: string;
+  onAvatarUpdate: (newAvatarUrl: string) => Promise<void>;
+};
+
+const ProfileHeader = ({ userName, userRole, currentAvatar, onAvatarUpdate }: ProfileHeaderProps) => {
+  const [selectedAvatar, setSelectedAvatar] = useState(() => {
+    // Try to get stored avatar, fallback to current avatar prop
+    return localStorage.getItem('userAvatar') || currentAvatar;
+  });
   const [isAvatarSelectionOpen, setIsAvatarSelectionOpen] = useState(false);
   const [isAvatarChanged, setIsAvatarChanged] = useState(false);
 
+  // Update selected avatar when currentAvatar prop changes
   useEffect(() => {
-    const updateLocalState = () => {
-      if (session?.user) {
-        setUserName(session.user.name || '');
-        setSelectedAvatar(session.user.image || "/images/avatar1.jpg");
-      }
-    };
-
-    updateLocalState();
-
-    const handleProfileUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const updatedProfile = customEvent.detail;
-      console.log("Profile update event received:", updatedProfile);
-
-      if (updatedProfile.name) {
-        setUserName(updatedProfile.name);
-        console.log("Updated name to:", updatedProfile.name);
-      }
-      if (updatedProfile.image) {
-        setSelectedAvatar(updatedProfile.image);
-        console.log("Updated image to:", updatedProfile.image);
-      }
-    };
-
-    window.addEventListener('profileUpdated', handleProfileUpdate);
-    return () => {
-      window.removeEventListener('profileUpdated', handleProfileUpdate);
-    };
-  }, [session]);
+    // Only update if there's no stored avatar
+    if (!localStorage.getItem('userAvatar')) {
+      setSelectedAvatar(currentAvatar);
+    }
+  }, [currentAvatar]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -63,31 +43,23 @@ const ProfileHeader = () => {
     }
   };
 
+  const handleAvatarChange = (newAvatar: string) => {
+    setSelectedAvatar(newAvatar);
+    setIsAvatarChanged(true);
+    setIsAvatarSelectionOpen(false);
+  };
+
   const handleSaveAvatar = async () => {
     try {
-      const currrentName = userName || session?.user?.name || '';
-      // Update session with new avatar
-      await update({
-        ...session,
-        user: {
-          ...session?.user,
-          name: currrentName,
-          image: selectedAvatar,
-        }
-      });
-
-      // Dispatch event for other components
-      window.dispatchEvent(new CustomEvent('profileUpdated', {
-        detail: {
-          name: currrentName,
-          image: selectedAvatar,
-          timestamp: Date.now(),
-        }
-      }));
-
+      await onAvatarUpdate(selectedAvatar);
       setIsAvatarChanged(false);
+      // Store the selection
+      localStorage.setItem('userAvatar', selectedAvatar);
     } catch (error) {
       console.error('Failed to update avatar:', error);
+      // Revert to stored avatar on error
+      const storedAvatar = localStorage.getItem('userAvatar') || currentAvatar;
+      setSelectedAvatar(storedAvatar);
     }
   };
 
@@ -122,9 +94,9 @@ const ProfileHeader = () => {
       </div>
 
       <h2 className="text-xl font-semibold text-white">
-        {userName || 'Loading...'}
+        {userName}
       </h2>
-      <p className="text-sm text-gray-300 capitalize">{profile.role}</p>
+      <p className="text-sm text-gray-300 capitalize">{userRole}</p>
 
       {isAvatarChanged && (
         <button
@@ -154,11 +126,7 @@ const ProfileHeader = () => {
               className={`rounded-full cursor-pointer border-2 ${
                 selectedAvatar === avatar ? "border-blue-500" : "border-transparent"
               }`}
-              onClick={() => {
-                setSelectedAvatar(avatar);
-                setIsAvatarChanged(true);
-                setIsAvatarSelectionOpen(false);
-              }}
+              onClick={() => handleAvatarChange(avatar)}
             />
           ))}
         </div>

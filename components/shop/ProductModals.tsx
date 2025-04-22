@@ -105,9 +105,9 @@ export default function ProductModal({
   const handleSave = async () => {
     try {
       if (type === "edit" && productDetails) {
-        onSubmit(productDetails)
+        onSubmit(productDetails);
       } else if (type === "add" && selectedProducts.size > 0) {
-        const productsArray = Array.from(selectedProducts.values())
+        const productsArray = Array.from(selectedProducts.values());
 
         const res = await fetch(`/api/products`, {
           method: "POST",
@@ -118,19 +118,21 @@ export default function ProductModal({
               productId: id,
               price,
               stock,
-              image, // Include the image URL from the catalog
+              image,
             })),
           }),
-        })
+        });
 
-        if (!res.ok) throw new Error("Failed to add products")
-        onSubmit()
+        if (!res.ok) throw new Error("Failed to add products");
+        
+        // Pass back the added products
+        onSubmit(productsArray);
       }
-      onClose()
+      onClose();
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
-  }
+  };
 
   const handleDelete = async () => {
     if (!product) return

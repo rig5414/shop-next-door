@@ -19,6 +19,22 @@ interface Shop {
   logo?: string;
 }
 
+interface Product {
+  id: string;
+  name?: string;
+  price: number;
+  stock: number;
+  image?: string;
+  catalog?: {
+    id: string;
+    name: string;
+    description?: string;
+    defaultPrice?: string;
+    image?: string;
+  };
+  catalogId?: string;
+}
+
 const VendorShopPage = () => {
   const { data: session } = useSession();
   const [shop, setShop] = useState<Shop | null>(null);
@@ -26,6 +42,7 @@ const VendorShopPage = () => {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -58,6 +75,29 @@ const VendorShopPage = () => {
     fetchShop();
   }, [session]);
 
+  const fetchProducts = async (shopId: string) => {
+    try {
+      const res = await fetch(`/api/products?shopId=${shopId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error("Failed to fetch products");
+      setProducts(data);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const fetchData = async () => {
+      if (shop?.id) {
+        await fetchProducts(shop.id);
+      }
+    };
+
+    fetchData();
+  }, [session, shop?.id]);
+
   const handleShopUpdate = async (updatedShop: { name: string; description: string; type: "local_shop" | "grocery_shop" }) => {
     if (!shop) return;
     setIsUpdating(true);
@@ -84,8 +124,23 @@ const VendorShopPage = () => {
     }
   };
 
-  const handleAddProducts = async () => {
+  const handleAddProducts = async (newProducts: Product[]) => {
+    setProducts(prevProducts => [...prevProducts, ...newProducts]);
     setIsAddOpen(false);
+  };
+
+  const handleProductUpdate = (updatedProduct: Product) => {
+    setProducts(prevProducts => 
+      prevProducts.map(p => p.id === updatedProduct.id ? 
+        { ...p, ...updatedProduct } : p
+      )
+    );
+  };
+
+  const handleProductDelete = (productId: string) => {
+    setProducts(prevProducts => 
+      prevProducts.filter(p => p.id !== productId)
+    );
   };
 
   if (loading) return (
@@ -150,7 +205,13 @@ const VendorShopPage = () => {
             )}
           </button>
         </div>
-        <ProductList shopId={shop.id} />
+        <ProductList 
+          products={products}
+          shopId={shop.id} 
+          shopType={shop.type}
+          onProductUpdate={handleProductUpdate}
+          onProductDelete={handleProductDelete}
+        />
       </section>
     </DashboardLayout>
   );

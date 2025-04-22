@@ -3,21 +3,69 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff; /* Light mode background */
-  --foreground: #171717; /* Light mode text */
-  --primary: #007bff; /* Blue */
+  /* Base colors */
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #4070ff;
+  --secondary: #64748b;
+  --sidebar-bg: #1a1f2d;
+  --card-bg: #ffffff;
+
+  /* Status colors */
+  --pending: #ffd700;
+  --completed: #00c853;
+
+  /* Text colors */
+  --text-primary: #171717;
+  --text-secondary: #64748b;
+
+  /* Gradient colors */
+  --gradient-from: #4070ff;
+  --gradient-to: #ff4088;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #121212; /* Dark mode background */
-    --foreground: #ffffff; /* White text in dark mode */
-    --primary: #3399ff; /* Lighter blue for dark mode */
+    --background: #121212;
+    --foreground: #ffffff;
+    --sidebar-bg: #0a0c14;
+    --card-bg: #1a1f2d;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --secondary: #94a3b8;
   }
 }
 
 body {
-  color: var(--foreground);
+  color: var(--text-primary);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Utility classes */
+.gradient-card {
+  @apply rounded-xl p-6;
+  background: linear-gradient(135deg, var(--gradient-from), var(--gradient-to));
+  color: white;
+}
+
+.dashboard-card {
+  @apply rounded-xl p-6 shadow-sm;
+  background: var(--card-bg);
+}
+
+.status-badge {
+  @apply px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.status-pending {
+  @apply status-badge;
+  color: var(--pending);
+  background: color-mix(in srgb, var(--pending) 15%, transparent);
+}
+
+.status-completed {
+  @apply status-badge;
+  color: var(--completed);
+  background: color-mix(in srgb, var(--completed) 15%, transparent);
 }

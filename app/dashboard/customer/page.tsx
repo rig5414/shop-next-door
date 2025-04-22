@@ -37,30 +37,43 @@ const CustomerDashboard = () => {
   const [ordersLoading, setOrdersLoading] = useState(true)
   const [shopsLoading, setShopsLoading] = useState(true)
 
-  useEffect(() => {
-    if (status !== "authenticated" || !session?.user) return
+  // Add new function to fetch user data
+  const fetchUserData = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}`)
+      if (!res.ok) throw new Error("Failed to fetch user data")
+      
+      const userData = await res.json()
+      setCustomerName(userData.name || "User")
+    } catch (error) {
+      console.error("Error fetching user data:", error)
+    }
+  }
 
-    setCustomerName(session.user.name || "User")
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.id) return
+
+    // Fetch latest user data when component mounts
+    fetchUserData(session.user.id)
+    
+    // Handle profile updates
+    const handleProfileUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent
+      const updatedProfile = customEvent.detail
+      
+      if (updatedProfile.name) {
+        setCustomerName(updatedProfile.name)
+      }
+    }
+
+    window.addEventListener('profileUpdated', handleProfileUpdate)
     fetchOrders(session.user.id)
     fetchShops()
     fetchProducts()
 
-    // Event listener for profile updates
-    const handleProfileUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent
-      const updatedProfile = customEvent.detail
-      console.log("Profile update event received:", updatedProfile)
-
-      if (updatedProfile.name) {
-        setCustomerName(updatedProfile.name)
-        console.log("Updated name to:", updatedProfile.name)
-      }
-    };
-
-    window.addEventListener('profileUpdated', handleProfileUpdate);
     return () => {
-      window.removeEventListener('profileUpdated', handleProfileUpdate);
-    };
+      window.removeEventListener('profileUpdated', handleProfileUpdate)
+    }
   }, [session, status])
 
   const fetchOrders = async (customerId: string) => {
@@ -162,7 +175,11 @@ const CustomerDashboard = () => {
 
   return (
     <DashboardLayout role="customer">
-      <DashboardHeader title={`Welcome, ${customerName}!`} subtitle="Here's what's happening today." />
+      <DashboardHeader 
+        userName={customerName}
+        title={`Welcome, ${customerName}!`}
+        subtitle="Here's what's happening today."
+      />
 
       {/* Dashboard Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">

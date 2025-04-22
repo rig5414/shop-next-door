@@ -27,37 +27,49 @@ interface ProductListProps {
   shopId?: string
   shopType?: "local_shop" | "grocery_shop"
   hidePriceAndStock?: boolean
+  onProductUpdate?: (product: Product) => void
+  onProductDelete?: (productId: string) => void
 }
 
-const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopType, hidePriceAndStock = false }) => {
+const ProductList: React.FC<ProductListProps> = ({ 
+  products = [], 
+  shopId, 
+  shopType, 
+  hidePriceAndStock = false,
+  onProductUpdate,
+  onProductDelete 
+}) => {
   const [fetchedProducts, setFetchedProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const { data: session } = useSession()
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [modalType, setModalType] = useState<"edit" | "delete" | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!shopId) return
+    if (!shopId) return;
+    
+    if (products.length === 0) {
+      const fetchProducts = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch(`/api/products?shopId=${shopId}`);
+          const data = await res.json();
+          if (!res.ok) throw new Error("Failed to fetch products");
+          setFetchedProducts(data);
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    const fetchProducts = async () => {
-      setLoading(true)
-      try {
-        const res = await fetch(`/api/products?shopId=${shopId}`)
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error || "Failed to fetch products")
-        setFetchedProducts(data)
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setLoading(false)
-      }
+      fetchProducts();
     }
+  }, [shopId, products]);
 
-    fetchProducts()
-  }, [shopId])
-
-  const displayedProducts = shopId ? fetchedProducts : products
+  const displayedProducts = products.length > 0 ? products : fetchedProducts
 
   const openModal = (type: "edit" | "delete", product: Product) => {
     console.log("Opening modal:", type)
@@ -67,7 +79,7 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
     console.log("Product Image:", product.image)
     setSelectedProduct(product)
     setModalType(type)
-    setIsModalOpen(true) // Ensure the modal opens
+    setIsModalOpen(true)
   }
 
   const handleProductUpdate = (updatedProduct: Product) => {
@@ -80,29 +92,100 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
 
   const handleSubmit = async (data: any) => {
     if (modalType === "edit") {
+      console.log('Starting edit operation with data:', data);
+      console.log('Selected product before edit:', selectedProduct);
+      
       try {
+        setActionLoading(data.id);
+        const requestBody = {
+          shopId,
+          name: data.name,
+          price: parseFloat(data.price),
+          stock: parseInt(data.stock, 10),
+        };
+        console.log('Sending edit request with:', requestBody);
+
         const res = await fetch(`/api/products/${data.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ price: data.price, stock: data.stock }),
-        })
-        if (!res.ok) throw new Error("Failed to update product")
-        handleProductUpdate(data)
+          body: JSON.stringify(requestBody),
+        });
+
+        const responseData = await res.json();
+        console.log('Edit response:', {
+          status: res.status,
+          statusText: res.statusText,
+          data: responseData
+        });
+
+        if (!res.ok) {
+          throw new Error(responseData.message || "Failed to update product");
+        }
+
+        const updatedProduct = {
+          ...selectedProduct,
+          ...data,
+          price: parseFloat(data.price),
+          stock: parseInt(data.stock, 10),
+        };
+        console.log('Final updated product:', updatedProduct);
+
+        handleProductUpdate(updatedProduct);
+        onProductUpdate?.(updatedProduct);
+        setIsModalOpen(false);
       } catch (error) {
-        console.error(error)
+        console.error("Edit error full details:", {
+          error,
+          message: error instanceof Error ? error.message : "Unknown error",
+          data
+        });
       }
     } else if (modalType === "delete") {
+      console.log('Starting delete operation');
+      console.log('Selected product for deletion:', selectedProduct);
+      
       try {
-        const res = await fetch(`/api/products/${data.id}`, { method: "DELETE" })
-        if (!res.ok) throw new Error("Failed to delete product")
-        handleProductDelete(data.id)
+        if (!selectedProduct?.id) {
+          console.error('No product selected for deletion');
+          throw new Error("No product selected for deletion");
+        }
+
+        setActionLoading(selectedProduct.id);
+        console.log('Sending delete request for product:', selectedProduct.id);
+
+        const res = await fetch(`/api/products/${selectedProduct.id}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ shopId })
+        });
+
+        console.log('Delete response:', {
+          status: res.status,
+          statusText: res.statusText
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Failed to delete product");
+        }
+
+        handleProductDelete(selectedProduct.id);
+        onProductDelete?.(selectedProduct.id);
+        
+        setIsModalOpen(false);
+        setModalType(null);
+        setSelectedProduct(null);
       } catch (error) {
-        console.error(error)
+        console.error("Delete error full details:", {
+          error,
+          selectedProduct,
+          shopId
+        });
+      } finally {
+        setActionLoading(null);
       }
     }
-    setIsModalOpen(false)
-    setModalType(null)
-  }
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -125,7 +208,6 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
                 height={128}
                 className="w-full h-32 object-cover rounded-md"
                 onError={(e) => {
-                  // Fallback to placeholder if image fails to load
                   e.currentTarget.src = "/images/placeholder.jpg"
                 }}
               />
@@ -140,7 +222,7 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
                 </>
               )}
 
-              {session?.user?.role === "vendor" ? (
+               {session?.user?.role === "vendor" ? (
                 <>
                   <button
                     onClick={() => openModal("edit", product)}
@@ -165,7 +247,6 @@ const ProductList: React.FC<ProductListProps> = ({ products = [], shopId, shopTy
         <p className="text-gray-400">No products available.</p>
       )}
 
-      {/* Modified this condition to not require shopType */}
       {modalType && selectedProduct && isModalOpen && (
         <ProductModal
           type={modalType}

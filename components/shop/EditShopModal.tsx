@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Spinner from "../../components/ui/Spinner";
+import Spinner from "../ui/Spinner";
 
 interface EditShopModalProps {
   isOpen: boolean;

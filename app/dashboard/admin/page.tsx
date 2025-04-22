@@ -228,7 +228,7 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <DashboardLayout role="admin">
-        <DashboardHeader title="Admin Dashboard" subtitle="Loading data..." />
+        <DashboardHeader userName={`${profile.firstName} ${profile.lastName}`} title="Admin Dashboard" subtitle="Loading data..." />
         <p className="text-white text-center mt-6">Loading dashboard data...</p>
       </DashboardLayout>
     );
@@ -237,7 +237,7 @@ const AdminDashboard = () => {
   if (error) {
     return (
       <DashboardLayout role="admin">
-        <DashboardHeader title="Admin Dashboard" subtitle="Error loading data" />
+        <DashboardHeader userName={`${profile.firstName} ${profile.lastName}`} title="Admin Dashboard" subtitle="Error loading data" />
         <p className="text-red-500 text-center mt-6">{error}</p>
       </DashboardLayout>
     );
@@ -245,7 +245,7 @@ const AdminDashboard = () => {
 
   return (
     <DashboardLayout role="admin">
-      <DashboardHeader title={`Welcome, ${profile.firstName} ${profile.lastName}!`} subtitle="Manage users, vendors, orders, and shops." />
+      <DashboardHeader userName={`${profile.firstName} ${profile.lastName}`} title={`Welcome, ${profile.firstName} ${profile.lastName}!`} subtitle="Manage users, vendors, orders, and shops." />
 
       {/* Sales & Revenue Insights */}
       <section className="mt-6">

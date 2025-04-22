@@ -10,9 +10,9 @@ import { useRouter } from "next/navigation";
 
 // Define the profile type to match component expectations
 type ProfileData = {
-  name: string;  // Changed from firstName/lastName to match DB structure
+  name: string;
   email: string;
-  profilePic?: string;
+  profilePic: string; // Make this required
 };
 
 const Spinner = () => (
@@ -38,19 +38,19 @@ const ProfilePage = () => {
 
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`/api/users/${session.user.id}/`); // Added trailing slash
+        const res = await fetch(`/api/users/${session.user.id}/`);
         if (!res.ok) throw new Error("Failed to fetch profile");
 
         const data = await res.json();
         setProfileData({
           name: data.name || "",
           email: data.email || "",
-          profilePic: data.profilePic || "/default-profile.png",
+          // Use session image if available, otherwise use default
+          profilePic: session.user.image || "/images/avatar1.jpg",
         });
 
         setRole(data.role);
       } catch (err) {
-        // Only set error if it's not an abort error
         if (err instanceof Error && err.name !== 'AbortError') {
           setError(err.message);
         }
@@ -117,6 +117,43 @@ const ProfilePage = () => {
     }
   };
 
+  // Add handler for avatar updates
+  const handleAvatarUpdate = async (newAvatarUrl: string) => {
+    if (!session?.user) return;
+
+    try {
+      setUpdating(true);
+      
+      // Update local state
+      setProfileData(prev => prev ? {
+        ...prev,
+        profilePic: newAvatarUrl
+      } : null);
+
+      // Update session with new image
+      await update({
+        ...session,
+        user: {
+          ...session.user,
+          image: newAvatarUrl
+        }
+      });
+
+      // Store avatar preference in localStorage for persistence
+      localStorage.setItem('userAvatar', newAvatarUrl);
+
+    } catch (err) {
+      console.error('Avatar update error:', err);
+      // Revert to previous avatar if update fails
+      setProfileData(prev => prev ? {
+        ...prev,
+        profilePic: session.user.image || "/images/avatar1.jpg"
+      } : null);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   if (loading || !role) return (
     <div className="flex flex-col justify-center items-center h-screen bg-gray-900">
       <div className="flex items-center gap-2 text-gray-400">
@@ -135,7 +172,12 @@ const ProfilePage = () => {
   return (
     <DashboardLayout role={role}>
       <div className="p-6">
-        <ProfileHeader />
+        <ProfileHeader 
+          userName={profileData.name}
+          userRole={role || 'Loading...'}
+          currentAvatar={profileData.profilePic || '/images/avatar1.jpg'}
+          onAvatarUpdate={handleAvatarUpdate}
+        />
         <ProfileDetails 
           profileData={profileData} 
           onProfileUpdate={handleProfileUpdate} 
