@@ -34,7 +34,7 @@ const RevenueBreakdown: React.FC<RevenueBreakdownProps> = ({ data }) => {
         <div className="text-right">
           <p className="text-sm text-gray-400">Total Sales</p>
           <p className="text-xl font-bold text-white">
-            KES {totalRevenue.toLocaleString()}
+            Ksh. {totalRevenue.toLocaleString()}
           </p>
         </div>
       </div>
@@ -45,7 +45,7 @@ const RevenueBreakdown: React.FC<RevenueBreakdownProps> = ({ data }) => {
             <li key={item.month} className="flex justify-between items-center border-b border-gray-700 pb-2">
               <span className="font-medium">{item.month}</span>
               <span className="text-green-400">
-                KES {item._sum.total.toLocaleString()}
+                Ksh. {item._sum.total.toLocaleString()}
               </span>
             </li>
           ))}

@@ -21,7 +21,7 @@ const SalesDayCard: React.FC<SalesDayCardProps> = ({ title, data }) => {
         <div className="flex justify-between">
           <span className="text-gray-400">Total Sales</span>
           <span className="font-medium text-white">
-            KES {Number(data.products).toLocaleString()}
+            Ksh. {Number(data.products).toLocaleString()}
           </span>
         </div>
         <div className="flex justify-between">
