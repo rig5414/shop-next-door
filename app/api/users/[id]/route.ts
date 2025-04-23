@@ -8,7 +8,8 @@ import { headers } from "next/headers";
 // GET: Fetch a single user by ID
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
-    const id = params.id; // Remove await here
+    const Resolvedparams = await params;
+    const id = Resolvedparams.id;
     const user = await prisma.user.findUnique({
       where: { id },
       select: { id: true, name: true, email: true, role: true, createdAt: true }
@@ -81,14 +82,17 @@ export async function PATCH(req: Request, context: { params: { id: string } }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Ensure users can only change their own password unless admin
-    if (session.user.id !== userId) {
+    // Allow admins to change any user's password without current password
+    const isAdmin = session.user.role === 'admin';
+    
+    // Regular users can only change their own password
+    if (!isAdmin && session.user.id !== userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Validate passwords
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json({ error: "Both current and new passwords are required" }, { status: 400 });
+    // Validate new password
+    if (!newPassword) {
+      return NextResponse.json({ error: "New password is required" }, { status: 400 });
     }
 
     // Check password strength
@@ -109,11 +113,17 @@ export async function PATCH(req: Request, context: { params: { id: string } }) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check current password before updating
+    // For non-admin users, verify current password
+    if (!isAdmin) {
+      if (!currentPassword) {
+        return NextResponse.json({ error: "Current password is required" }, { status: 400 });
+      }
+      
       const passwordMatch = await bcrypt.compare(currentPassword, user.password);
       if (!passwordMatch) {
         return NextResponse.json({ error: "Incorrect current password" }, { status: 401 });
       }
+    }
 
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -134,7 +144,8 @@ export async function PATCH(req: Request, context: { params: { id: string } }) {
 // DELETE: Delete a user (TEMP: No auth check)
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
-    const userId = params.id;
+    const Resolvedparams = await params;
+    const userId = Resolvedparams.id;
     const session = await getServerSession(authOptions);
 
     console.log("Session:", session);

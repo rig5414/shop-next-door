@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -53,8 +53,8 @@ const ChangePassword = () => {
     setErrors({ current: "", new: "", confirm: "" });
 
     if (!userId) {
-      console.log("Session data:", session);
-      alert("User not authenticated");
+      console.error("No user ID found in session:", session);
+      setErrors((prev) => ({ ...prev, current: "Authentication error. Please try logging in again." }));
       setLoading(false);
       return;
     }
@@ -93,16 +93,28 @@ const ChangePassword = () => {
         throw new Error(data.error || "Failed to update password");
       }
 
-      alert("Password updated successfully! Please log in with your new password.");
+      // Clear form
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
 
-      // Redirect to login page
-      router.push("/auth/login");
+      // Show success message and handle sign out
+      alert("Password updated successfully! You will be signed out to log in with your new password.");
+
+      // Sign out and redirect to login
+      await signOut({
+        redirect: true,
+        callbackUrl: "/auth/login?message=password_updated",
+      });
     } catch (error: any) {
       console.error("Error updating password:", error);
-      setErrors((prev) => ({ ...prev, current: error.message || "Error updating password" }));
+      setErrors((prev) => ({
+        ...prev,
+        current:
+          error.message === "Invalid password"
+            ? "Current password is incorrect"
+            : error.message || "Error updating password",
+      }));
     } finally {
       setLoading(false);
     }

@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 export async function middleware(req: NextRequest) {
-  // Check for authentication
-  const token = req.cookies.get("next-auth.session-token")?.value || 
-                req.cookies.get("__Secure-next-auth.session-token")?.value;
+  // Get the token using next-auth's getToken helper
+  const token = await getToken({ 
+    req,
+    secret: process.env.NEXTAUTH_SECRET
+  });
   
-  // If no authentication token, redirect to login
+  // If no token, handle unauthorized access
   if (!token) {
     // For API requests, return 401 Unauthorized
     if (req.nextUrl.pathname.startsWith('/api/')) {
@@ -17,10 +20,10 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL(`/auth/login?returnUrl=${returnUrl}`, req.url));
   }
 
-  // Extract user role from cookie (assuming role is stored in JWT or session)
-  const userRole = req.cookies.get("userRole")?.value || "customer"; // Default to customer
+  // Get user role from the token
+  const userRole = token.role as string || "customer";
 
-  // Only redirect if the user is trying to access `/dashboard` directly (not subpages)
+  // Only redirect if the user is trying to access `/dashboard` directly
   if (req.nextUrl.pathname === "/dashboard") {
     if (userRole === "admin") {
       return NextResponse.redirect(new URL("/dashboard/admin", req.url));
@@ -31,7 +34,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  return NextResponse.next(); // Allow normal page access
+  return NextResponse.next();
 }
 
 // Define paths to protect

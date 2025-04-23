@@ -7,7 +7,8 @@ import { authOptions } from "../../../../../lib/auth";
 // POST: Admin impersonates a user
 export async function POST(req: Request, { params }: { params: { id: string } }) {
     try {
-        const userId = params.id;
+        const Resolvedparams = await params;
+        const userId = Resolvedparams.id;
 
         // Get the current session to verify admin status
         const session = await getServerSession(authOptions);

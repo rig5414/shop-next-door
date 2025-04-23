@@ -6,7 +6,8 @@ import { getServerSession } from "next-auth";
 // GET: Fetch a single shop by ID
 export async function GET(request: Request, { params }: { params: { id: string } }) {
     try {
-        const id = await params.id;
+        const Resolvedparams = await params;
+        const id = Resolvedparams.id;
         const shop = await prisma.shop.findUnique({
             where: { id },
             include: {

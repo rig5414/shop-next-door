@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -10,13 +10,23 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
 
+  // Check for password_updated message in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('message') === 'password_updated') {
+      setSuccessMessage('Password updated successfully. Please log in with your new password.');
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
     setIsLoading(true);
 
     try {
@@ -27,28 +37,31 @@ export default function Login() {
       });
 
       if (result?.error) {
+        console.error("Login error:", result.error);
         setError("Invalid email or password");
         setIsLoading(false);
         return;
       }
 
-      // Fetch session to check user role after login
-      const res = await fetch("/api/auth/session");
-      const session = await res.json();
+      // Use router.refresh() to ensure the session is updated
+      router.refresh();
 
-      if (session?.user?.role === "customer") {
-        router.push("/dashboard/customer");
-      } else if (session?.user?.role === "vendor") {
-        router.push("/dashboard/vendor");
-      } else if (session?.user?.role === "admin") {
-        router.push("/dashboard/admin");
-      } else {
-        setError("Role not assigned");
-        setIsLoading(false); // Add this line
+      // Get the return URL from the query parameters or use a default route
+      const params = new URLSearchParams(window.location.search);
+      const returnUrl = params.get('returnUrl');
+
+      // Redirect based on role
+      if (result?.ok) {
+        if (returnUrl) {
+          router.push(returnUrl);
+        } else {
+          router.push('/dashboard'); // Let the middleware handle role-based routing
+        }
       }
     } catch (error) {
+      console.error("Login error:", error);
       setError("An error occurred during login");
-      setIsLoading(false); // Add this line
+      setIsLoading(false);
     }
   };
 
@@ -102,7 +115,17 @@ export default function Login() {
         <div className="relative bg-gray-900 p-8 rounded-lg shadow-lg w-96 border border-gray-700 neon-glow">
           <h1 className="text-2xl font-bold mb-4 text-center text-white">Login</h1>
 
-          {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
+          {successMessage && (
+            <div className="bg-green-500 bg-opacity-20 border border-green-500 text-green-500 px-4 py-2 rounded-md text-sm text-center mb-4">
+              {successMessage}
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-500 px-4 py-2 rounded-md text-sm text-center mb-4">
+              {error}
+            </div>
+          )}
 
           <form className="flex flex-col gap-4" onSubmit={handleLogin}>
             {/* Email Input */}
