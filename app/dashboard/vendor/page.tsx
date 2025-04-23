@@ -396,12 +396,35 @@ const VendorDashboard = () => {
         ) : (
           <>
             {displayProducts.length > 0 ? (
-              <ProductList 
-                products={displayProducts} 
-                shopId={shopId} 
-                shopType="local_shop"
-                onProductDelete={handleProductDelete} 
-              />
+              <>
+          <ProductList 
+            products={displayProducts} 
+            shopId={shopId} 
+            shopType="local_shop"
+            onProductDelete={handleProductDelete} 
+          />
+          <div className="mt-4 text-right">
+            <a 
+              href="/dashboard/vendor/shop" 
+              className="inline-flex items-center text-blue-400 hover:text-cyan-400 transition-colors duration-200"
+            >
+              View more products
+              <svg 
+                className="w-4 h-4 ml-1" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth={2} 
+            d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </a>
+          </div>
+              </>
             ) : (
               <p className="text-gray-400">No products available.</p>
             )}
