@@ -117,29 +117,51 @@ const AdminVendorsPage = () => {
     }
   };
 
-  // Function to delete a vendor's shop
-  const deleteVendorShop = async (id: string) => {
-    try {
-      // Delete the shop
-      const response = await fetch(`/api/shops/${id}`, {
-        method: "DELETE",
-      });
+ // Function to delete a vendor's shop
+const deleteVendorShop = async (id: string) => {
+  try {
+    console.log(`Attempting to delete shop with ID: ${id}`);
+    
+    const response = await fetch(`/api/shops/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
 
-      if (!response.ok) throw new Error("Failed to delete shop");
+    console.log('Delete response status:', response.status);
+    
+    // Try to get the error message from the response
+    const responseData = await response.json();
+    console.log('Delete response data:', responseData);
 
-      // Update the vendor in the state to show "No Shop"
-      setVendors((prev) =>
-        prev.map((v) => (v.id === id ? { ...v, shop: "No Shop", shopId: undefined, } : v))
-      );
-
-      //Refresh the vendors list
-      await fetchVendors();
-
-    } catch (err) {
-      console.error(err);
-      alert("Error deleting vendor shop");
+    if (!response.ok) {
+      throw new Error(responseData.message || "Failed to delete shop");
     }
-  };
+
+    console.log('Shop deleted successfully, updating UI...');
+    
+    // Update the vendor in the state to show "No Shop"
+    setVendors((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, shop: "No Shop", shopId: undefined, } : v))
+    );
+
+    console.log('Starting vendors refresh...');
+    await fetchVendors();
+
+  } catch (err: any) { // Type the error as 'any' to access its properties
+    console.error('Delete shop error details:', {
+      name: err?.name,
+      message: err?.message,
+      stack: err?.stack,
+      response: err?.response,
+      // Log the full error object to see all available properties
+      fullError: err
+    });
+    
+    // More specific error message to the user
+    const errorMessage = err?.message || "Error deleting vendor shop";
+    alert(errorMessage);
+  }
+};
 
   return (
     <DashboardLayout role="admin">

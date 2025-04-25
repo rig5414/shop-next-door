@@ -76,35 +76,43 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
 // DELETE: Remove a shop (admin or the shop's vendor can delete)
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
     try {
-        // Get the session to check if user is admin
-        const session = await getServerSession(authOptions);
+        console.log('DELETE request received for shop ID:', params.id);
         
-        // Check if user is authenticated
+        const session = await getServerSession(authOptions);
         if (!session || !session.user) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
         
-        // Get user role and ID
-        const userRole = session.user.role;
-        const userId = session.user.id;
-        
-        // Validate shop exists
-        const shop = await prisma.shop.findUnique({ where: { id: params.id } });
-        if (!shop) {
-            return NextResponse.json({ message: "Shop not found" }, { status: 404 });
-        }
+        // First delete all products associated with the shop
+        await prisma.product.deleteMany({
+            where: {
+                shopId: params.id
+            }
+        });
 
-        // Allow deletion if user is admin OR if user is the vendor who owns the shop
-        if (userRole !== "admin" && shop.vendorId !== userId) {
-            return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
-        }
-
-        // Delete shop
-        await prisma.shop.delete({ where: { id: params.id } });
+        // Then delete the shop
+        await prisma.shop.delete({
+            where: { 
+                id: params.id 
+            }
+        });
 
         return NextResponse.json({ message: "Shop deleted successfully" }, { status: 200 });
-    } catch (error) {
-        console.error("DELETE /api/shops/:id error:", error);
-        return NextResponse.json({ message: "Error deleting shop", error }, { status: 500 });
+    } catch (error: any) {
+        console.error("DELETE /api/shops/:id detailed error:", {
+            name: error?.name,
+            message: error?.message,
+            code: error?.code,
+            meta: error?.meta
+        });
+
+        return NextResponse.json({ 
+            message: "Database error occurred while deleting shop",
+            error: process.env.NODE_ENV === 'development' ? {
+                message: error?.message,
+                code: error?.code,
+                meta: error?.meta
+            } : undefined
+        }, { status: 500 });
     }
 }
